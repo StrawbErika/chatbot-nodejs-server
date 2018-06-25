@@ -22,15 +22,7 @@ export default ({ config, db }) => {
 				break;
 			case 'getBookTitle':
 				const title = req.body.queryResult.parameters.title;
-				if(title == 'Show all books'){
-					return library.showAllBooks(db, req, res);
-				}
-				else if(title == 'Show all available books'){
-					return library.showAvailableBooks(db, req, res);
-				}
-				else{
-					return library.getBookTitle(db, req, res);
-				}
+				return library.getBookTitle(db, req, res);
 				break;
 			case 'getBookAuthor':
 				return library.getBookAuthor(db, req, res);
@@ -39,12 +31,23 @@ export default ({ config, db }) => {
 				return library.getBookCategory(db, req, res);
 				break;
 			 case 'returnBook':
-				console.log('nice!');
 				return library.returnBook(db, req, res);
 				break;
 			case 'borrowBook':
 				return library.borrowBook(db, req, res);
 				break;
+			case 'others':
+				const others = req.body.queryResult.parameters.others;
+				if(others == 'show all books'){
+					return library.showAllBooks(db, req, res);
+				}
+				else if(others == 'show available books'){
+					return library.showAvailableBooks(db, req, res);
+				}
+				else if(others == 'show my borrowed books'){
+					return library.showBorrowedBooks(db, req, res);
+				}
+
 		}
 	});
 	api.get('/getName',function (req,res){
