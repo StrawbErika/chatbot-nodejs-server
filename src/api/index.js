@@ -11,17 +11,26 @@ export default ({ config, db }) => {
 		const action = req.body.queryResult.action;
 		const output = {"fulfillmentText" : " "};
 		const parameters = req.body.queryResult.parameters;
+		console.log(action);
 		switch(action){
 			case 'inputWelcome':
 				output["fulfillmentText"] = "Welcome to book rental! What would you like me to call you?";
 				return res.json(output);
 				break;
 			case 'getName':
-				output["fulfillmentText"] = `Hi ${parameters.name}, Is there anything you would want to do?`;
-				return res.json(output);
+				return library.addUser(db, req, res);
 				break;
 			case 'getBookTitle':
-				return library.getBookTitle(db, req, res);
+				const title = req.body.queryResult.parameters.title;
+				if(title == 'Show all books'){
+					return library.showAllBooks(db, req, res);
+				}
+				else if(title == 'Show all available books'){
+					return library.showAvailableBooks(db, req, res);
+				}
+				else{
+					return library.getBookTitle(db, req, res);
+				}
 				break;
 			case 'getBookAuthor':
 				return library.getBookAuthor(db, req, res);
@@ -29,13 +38,12 @@ export default ({ config, db }) => {
 			case 'getBookCategory':
 				return library.getBookCategory(db, req, res);
 				break;
- 			case 'returnBook':
-				output["fulfillmentText"] = `Thanks for returning ${parameters.returned}. Is there anything else you would like to do?`;
-				return res.json(output);
+			 case 'returnBook':
+				console.log('nice!');
+				return library.returnBook(db, req, res);
 				break;
 			case 'borrowBook':
-				output["fulfillmentText"] = `Here is ${parameters.borrowed}. Is there anything else you would like to do?`;
-				return res.json(output);
+				return library.borrowBook(db, req, res);
 				break;
 		}
 	});
