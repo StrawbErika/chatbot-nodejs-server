@@ -20,9 +20,9 @@ constraint book_borrower foreign key(uid) references user(uid)
 
 
 insert into book values(1,"hello","jk", "boring", NULL);
-insert into book values(2,"hello1","jk1", "boring1", NULL);
-insert into book values(3,"hello2","jk2", "boring2", NULL);
-insert into book values(4,"hello3","jk3", "boring3", NULL);
+insert into book values(2,"hi1","jk1", "boring1", NULL);
+insert into book values(3,"bye2","jk2", "boring2", NULL);
+insert into book values(4,"oops3","jk3", "boring3", NULL);
 insert into book values(5,"hello4","jk4", "boring4", NULL);
 
 -- insert into user values(4,1);

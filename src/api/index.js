@@ -22,15 +22,13 @@ export default ({ config, db }) => {
 				return res.json(output);
 				break;
 			case 'getBookTitle':
-				output["fulfillmentText"] = `I'll get ${parameters.title}! Is there anything else you would like to do?`;
-				return res.json(output);
+				return library.getBookTitle(db, req, res);
 				break;
 			case 'getBookAuthor':
 				return library.getBookAuthor(db, req, res);
 				break;
 			case 'getBookCategory':
-				output["fulfillmentText"] = `I'll get books in category: ${parameters.category}. Is there anything else you would like to do?`;
-				return res.json(output);
+				return library.getBookCategory(db, req, res);
 				break;
  			case 'returnBook':
 				output["fulfillmentText"] = `Thanks for returning ${parameters.returned}. Is there anything else you would like to do?`;
