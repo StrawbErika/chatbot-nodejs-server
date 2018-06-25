@@ -2,11 +2,13 @@
 import { version } from '../../package.json';
 import { Router } from 'express';
 import facets from './facets';
+import * as library from '../library';
 
 export default ({ config, db }) => {
 	let api = Router();
 
-	api.post('/post', (req, res) => {
+
+	api.post('/library', (req, res) => {
 		const action = req.body.queryResult.action;
 		const output = {"fulfillmentText" : " "};
 		const parameters = req.body.queryResult.parameters;
@@ -24,14 +26,7 @@ export default ({ config, db }) => {
 				return res.json(output);
 				break;
 			case 'getBookAuthor':
-				if(parameters.book === 'undefined'){
-					output["fulfillmentText"] =`I'll get ${parameters.author}'s books! Is there anything else you would like to do?`;
-					return res.json(output);
-				}
-				else{
-					output["fulfillmentText"] =`I'll get ${parameters.book} by ${parameters.author}! Is there anything else you would like to do?`;
-					return res.json(output);
-				}
+				return library.getBookAuthor(db, req, res);
 				break;
 			case 'getBookCategory':
 				output["fulfillmentText"] = `I'll get books in category: ${parameters.category}. Is there anything else you would like to do?`;

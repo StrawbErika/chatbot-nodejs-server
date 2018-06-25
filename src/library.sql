@@ -5,6 +5,7 @@ USE library;
 
 CREATE TABLE user(
 uid NUMERIC(10),
+name VARCHAR(100),
 constraint user_uid_pk primary key(uid)
 );
 
