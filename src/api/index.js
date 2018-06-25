@@ -7,7 +7,6 @@ import * as library from '../library';
 export default ({ config, db }) => {
 	let api = Router();
 
-
 	api.post('/library', (req, res) => {
 		const action = req.body.queryResult.action;
 		const output = {"fulfillmentText" : " "};

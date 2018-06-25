@@ -33,9 +33,13 @@
     "cors": "^2.7.1",
     "express": "^4.13.3",
     "morgan": "^1.8.0",
+<<<<<<< HEAD
     "mysql": "^2.15.0",
     "resource-router-middleware": "^0.6.0",
     "unirest": "^0.5.1"
+=======
+    "resource-router-middleware": "^0.6.0"
+>>>>>>> 9b8c005a38a0de820eac7e319e81b4318c320630
   },
   "devDependencies": {
     "babel-cli": "^6.9.0",

@@ -30,11 +30,18 @@ initializeDb( db => {
 	app.use(middleware({ config, db }));
 
 	// api router
+<<<<<<< HEAD
 	app.use('/', api({ config, db }));
 
 	app.server.listen(process.env.PORT || config.port, () => {
 		console.log(`Started on port ${app.server.address().port}`);
 		console.log(`Started on port ${app.server.address()}`);
+=======
+	app.use('/api', api({ config, db }));
+
+	app.server.listen(process.env.PORT || config.port, () => {
+		console.log(`Started on port ${app.server.address().port}`);
+>>>>>>> 9b8c005a38a0de820eac7e319e81b4318c320630
 	});
 });
 
