@@ -32,7 +32,6 @@ export function getBookTitle(db, req, res) {
         }
 
 		if(!rows.length) {
-            console.log("NOTICE ME >:(" +  title);
 			return res.json({ fulfillmentText: `We don't have anything ${title}!`});
 		}
         else{
@@ -47,16 +46,16 @@ export function getBookTitle(db, req, res) {
 
 export function getBookCategory(db, req, res) {
     const category = req.body.queryResult.parameters.category;
-	const queryString = 'SELECT title, author, category FROM book WHERE category=?';
-
+    const queryString = 'SELECT title, author, category FROM book WHERE category like?';
+    console.log(category)
 	db.query(queryString, '%' + category + '%', (err, rows) => {
-		if(err) {
+        if(err) {
 			console.log(err);
 			return res.json({ fulfillmentText: `Error!` });
 		}
 
 		if(!rows.length) {
-			return res.json({ fulfillmentText: `We don't have anything in ${category}!`});
+			return res.json({ fulfillmentText: `We don't have anything in ${category}! :'(`});
 		}
         else{
             var books = 'Here are the books with category: ' + category + '\n\n';
