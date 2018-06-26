@@ -30,6 +30,7 @@
   "dependencies": {
     "body-parser": "^1.13.3",
     "compression": "^1.5.2",
+    "convert-csv-to-json": "0.0.13",
     "cors": "^2.7.1",
     "express": "^4.13.3",
     "morgan": "^1.8.0",
