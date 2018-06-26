@@ -43,6 +43,10 @@ export default ({ config, db }) => {
 			case 'showBorrrowedBooks':
 				return library.showBorrowedBooks(db, req, res);
 				break;
+			case 'showUnavailableBooks':
+				return library.showUnavailableBooks(db, req, res);
+				break;
+
 		}
 	});
 	api.get('/getName',function (req,res){
