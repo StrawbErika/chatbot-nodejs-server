@@ -136,6 +136,50 @@ export function showAllBooks(db, req, res) {
     });
 }
 
+export function showAllCategories(db, req, res) {
+    const queryString = 'SELECT DISTINCT category FROM book';
+
+	db.query(queryString, (err, rows) => {
+		if(err) {
+			console.log(err);
+			return res.json({ fulfillmentText: `Error!` });
+		}
+
+		if(!rows.length) {
+			return res.json({ fulfillmentText: 'There are no books in the db!'});
+		}
+        else{
+            var categories = 'Here are the books:';
+            for(var i = 0; i < rows.length; i++) {
+                categories += '\n\n' + rows[i];
+            }
+            return res.json({ fulfillmentText: categories });
+        }
+    });
+}
+
+export function showUnvailableBooks(db, req, res) {
+    const queryString = 'SELECT title, author, category FROM book where uid is not null';
+
+	db.query(queryString, (err, rows) => {
+		if(err) {
+			console.log(err);
+			return res.json({ fulfillmentText: `Error!` });
+		}
+
+		if(!rows.length) {
+			return res.json({ fulfillmentText: 'All are available!'});
+		}
+        else{
+            var books = 'Here are the unavailable books:';
+            for(var i = 0; i < rows.length; i++) {
+                books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+            }
+            return res.json({ fulfillmentText: books });
+        }
+	});
+}
+
 export function showAvailableBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book where uid is null';
 
