@@ -22,6 +22,48 @@ export function addUser(db, req, res) {
     });
 }
 
+export function showBorrowedBooks(db, req, res) {
+    const id = req.body.session;
+	var queryString = `SELECT title, author FROM book WHERE uid = '${id}'`;
+    var output = {"fulfillmentMessages": ""};
+
+	db.query(queryString, (err, rows) => {
+		if(err) {
+			console.log(err);
+		}
+
+		if(!rows.length) {
+			return res.json({ fulfillmentText: `You didn't borrow anything!️` });
+		}
+		
+		db.query(queryString, (err, rows) => {
+			if(err) {
+				console.log(err);
+            }
+            else{
+                var textListJSON = [];
+                var textList = [];
+                var text = 'Here are all your books';
+                textList.push(text);
+                const textInnerJSON = {"text": textList};
+                const textJSON = {"text":textInnerJSON};
+                textListJSON.push(textJSON);
+                
+                for(var i = 0; i < rows.length; i++) {
+                    textList = [];
+                    text = rows[i].title + '\nAuthor: ' + rows[i].author;
+                    textList.push(text);
+                    const textInnerJSON = {"text": textList};
+                    const textJSON = {"text":textInnerJSON};
+                    textListJSON.push(textJSON);
+                }
+                return res.json(output);
+            }
+
+		});
+	});
+}
+
 export function borrowBook(db, req, res) {
 	const borrowed = req.body.queryResult.parameters.borrowed;
 	var queryString = `SELECT uid FROM book WHERE title = '${borrowed}'`;
@@ -50,36 +92,6 @@ export function borrowBook(db, req, res) {
 		});
 	});
 }
-
-export function showBorrowedBooks(db, req, res) {
-    const id = req.body.session;
-	var queryString = `SELECT title, author FROM book WHERE uid = '${id}'`;
-
-	db.query(queryString, (err, rows) => {
-		if(err) {
-			console.log(err);
-		}
-
-		if(!rows.length) {
-			return res.json({ fulfillmentText: `You didn't borrow anything!️` });
-		}
-		
-		db.query(queryString, (err, rows) => {
-			if(err) {
-				console.log(err);
-            }
-            else{
-                var books = 'Here are the your books ';
-                for(var i = 0; i < rows.length; i++) {
-                    books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author;
-                }
-                return res.json({ fulfillmentText: books });
-            }
-
-		});
-	});
-}
-
 
 export function returnBook(db, req, res) {
 	const returned = req.body.queryResult.parameters.returned;
@@ -117,6 +129,7 @@ export function returnBook(db, req, res) {
 
 export function showAllBooks(db, req, res) {
 	const queryString = 'SELECT title, author, category FROM book';
+    var output = {"fulfillmentMessages": ""};
 
 	db.query(queryString, (err, rows) => {
 		if(err) {
@@ -128,17 +141,33 @@ export function showAllBooks(db, req, res) {
 			return res.json({ fulfillmentText: 'There are no books in the db!'});
 		}
         else{
-            var books = 'Here are the books:';
+            var textListJSON = [];
+            var textList = [];
+            var text = 'Here are all books';
+            textList.push(text);
+            const textInnerJSON = {"text": textList};
+            const textJSON = {"text":textInnerJSON};
+            textListJSON.push(textJSON);
+            
             for(var i = 0; i < rows.length; i++) {
-                books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList = [];
+                text = rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList.push(text);
+                const textInnerJSON = {"text": textList};
+                const textJSON = {"text":textInnerJSON};
+                textListJSON.push(textJSON);
             }
-            return res.json({ fulfillmentText: books });
+            
+            const output = {"fulfillmentMessages": textListJSON};
+                        
+            return res.json(output);
         }
 	});
 }
 
 export function showAvailableBooks(db, req, res) {
 	const queryString = 'SELECT title, author, category FROM book where uid is null';
+    var output = {"fulfillmentMessages": ""};
 
 	db.query(queryString, (err, rows) => {
 		if(err) {
@@ -150,11 +179,26 @@ export function showAvailableBooks(db, req, res) {
 			return res.json({ fulfillmentText: 'There are no available books in the db!'});
 		}
         else{
-            var books = 'Here are the books:';
+            var textListJSON = [];
+            var textList = [];
+            var text = 'Here are the available books';
+            textList.push(text);
+            const textInnerJSON = {"text": textList};
+            const textJSON = {"text":textInnerJSON};
+            textListJSON.push(textJSON);
+            
             for(var i = 0; i < rows.length; i++) {
-                books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList = [];
+                text = rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList.push(text);
+                const textInnerJSON = {"text": textList};
+                const textJSON = {"text":textInnerJSON};
+                textListJSON.push(textJSON);
             }
-            return res.json({ fulfillmentText: books });
+            
+            const output = {"fulfillmentMessages": textListJSON};
+                        
+            return res.json(output);
         }
 	});
 }
@@ -162,6 +206,7 @@ export function showAvailableBooks(db, req, res) {
 export function getBookAuthor(db, req, res) {
     const author = req.body.queryResult.parameters.author;
 	const queryString = 'SELECT title, author, category FROM book WHERE author=?';
+    var output = {"fulfillmentMessages": ""};
 
 	db.query(queryString, '%' + author + '%', (err, rows) => {
 		if(err) {
@@ -173,11 +218,26 @@ export function getBookAuthor(db, req, res) {
 			return res.json({ fulfillmentText: `${author} has no books!`});
 		}
         else{
-            var books = 'Here are the books:';
+            var textListJSON = [];
+            var textList = [];
+            var text = 'Here are the books by ' + author + '\n\n';
+            textList.push(text);
+            const textInnerJSON = {"text": textList};
+            const textJSON = {"text":textInnerJSON};
+            textListJSON.push(textJSON);
+            
             for(var i = 0; i < rows.length; i++) {
-                books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList = [];
+                text = rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList.push(text);
+                const textInnerJSON = {"text": textList};
+                const textJSON = {"text":textInnerJSON};
+                textListJSON.push(textJSON);
             }
-            return res.json({ fulfillmentText: books });
+            
+            const output = {"fulfillmentMessages": textListJSON};
+                        
+            return res.json(output);
         }
 	});
 }
@@ -185,7 +245,7 @@ export function getBookAuthor(db, req, res) {
 export function getBookTitle(db, req, res) {
     const title = req.body.queryResult.parameters.title;
     const queryString = 'SELECT title, author, category FROM book WHERE title like ?';
-    
+    var output = {"fulfillmentMessages": ""};
 	db.query(queryString, '%' + title + '%', (err, rows) => {
 		if(err) {
 			console.log(err);
@@ -196,19 +256,34 @@ export function getBookTitle(db, req, res) {
 			return res.json({ fulfillmentText: `We don't have anything ${title}!`});
 		}
         else{
-            var books = 'Here are the books with title: ' + title + '\n\n';
+            var textListJSON = [];
+            var textList = [];
+            var text = 'Here are the books with title: ' + title + '\n\n';
+            textList.push(text);
+            const textInnerJSON = {"text": textList};
+            const textJSON = {"text":textInnerJSON};
+            textListJSON.push(textJSON);
+            
             for(var i = 0; i < rows.length; i++) {
-                books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList = [];
+                text = rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList.push(text);
+                const textInnerJSON = {"text": textList};
+                const textJSON = {"text":textInnerJSON};
+                textListJSON.push(textJSON);
             }
-            return res.json({ fulfillmentText: books });
-        }
+            
+            const output = {"fulfillmentMessages": textListJSON};
+                        
+            return res.json(output);
+         }
 	});
 }
 
 export function getBookCategory(db, req, res) {
     const category = req.body.queryResult.parameters.category;
     const queryString = 'SELECT title, author, category FROM book WHERE category like?';
-    console.log(category)
+    var output = {"fulfillmentMessages": ""};
 	db.query(queryString, '%' + category + '%', (err, rows) => {
         if(err) {
 			console.log(err);
@@ -219,11 +294,26 @@ export function getBookCategory(db, req, res) {
 			return res.json({ fulfillmentText: `We don't have anything in ${category}! :'(`});
 		}
         else{
-            var books = 'Here are the books with category: ' + category + '\n\n';
+            var textListJSON = [];
+            var textList = [];
+            var text = 'Here are the books with category: ' + category + '\n\n';
+            textList.push(text);
+            const textInnerJSON = {"text": textList};
+            const textJSON = {"text":textInnerJSON};
+            textListJSON.push(textJSON);
+            
             for(var i = 0; i < rows.length; i++) {
-                books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList = [];
+                text = rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+                textList.push(text);
+                const textInnerJSON = {"text": textList};
+                const textJSON = {"text":textInnerJSON};
+                textListJSON.push(textJSON);
             }
-            return res.json({ fulfillmentText: books });
+            
+            const output = {"fulfillmentMessages": textListJSON};
+                        
+            return res.json(output);
         }
 	});
 }

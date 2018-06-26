@@ -1,4 +1,3 @@
-//https://us-central1-book-rental-95009.cloudfunctions.net/helloWorld
 import { version } from '../../package.json';
 import { Router } from 'express';
 import facets from './facets';
@@ -21,7 +20,6 @@ export default ({ config, db }) => {
 				return library.addUser(db, req, res);
 				break;
 			case 'getBookTitle':
-				const title = req.body.queryResult.parameters.title;
 				return library.getBookTitle(db, req, res);
 				break;
 			case 'getBookAuthor':
@@ -36,18 +34,15 @@ export default ({ config, db }) => {
 			case 'borrowBook':
 				return library.borrowBook(db, req, res);
 				break;
-			case 'others':
-				const others = req.body.queryResult.parameters.others;
-				if(others == 'show all books'){
-					return library.showAllBooks(db, req, res);
-				}
-				else if(others == 'show available books'){
-					return library.showAvailableBooks(db, req, res);
-				}
-				else if(others == 'show my borrowed books'){
-					return library.showBorrowedBooks(db, req, res);
-				}
-
+			case 'showAllBooks':
+				return library.showAllBooks(db, req, res);
+				break;
+			case 'showAvailableBooks':
+				return library.showAvailableBooks(db, req, res);
+				break;
+			case 'showBorrrowedBooks':
+				return library.showBorrowedBooks(db, req, res);
+				break;
 		}
 	});
 	api.get('/getName',function (req,res){
