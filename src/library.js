@@ -1,3 +1,6 @@
+//COMMENTS R TODO
+
+//add name in schema
 export function addUser(db, req, res) {
     const id = req.body.session;
     const name = req.body.queryResult.parameters.name	
@@ -51,6 +54,7 @@ export function showBorrowedBooks(db, req, res) {
 	});
 }
 
+//double check
 export function borrowBook(db, req, res) {
 	const borrowed = req.body.queryResult.parameters.borrowed;
 	var queryString = `SELECT uid FROM book WHERE title = '${borrowed}'`;
@@ -113,7 +117,8 @@ export function returnBook(db, req, res) {
 	});
 }
 
-
+//prompt if wanna show all bec it has xxxx rows
+//prompt if how many books per category want to see
 export function showAllBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book';
 
@@ -158,6 +163,8 @@ export function showAllCategories(db, req, res) {
     });
 }
 
+//prompt if wanna show all bec it has xxxx rows (check if big number of row)
+//prompt if how many books per category want to see
 export function showUnvailableBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book where uid is not null';
 
@@ -180,6 +187,8 @@ export function showUnvailableBooks(db, req, res) {
 	});
 }
 
+//prompt if wanna show all bec it has xxxx rows
+//prompt if how many books per category want to see
 export function showAvailableBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book where uid is null';
 
@@ -225,6 +234,9 @@ export function getBookAuthor(db, req, res) {
 	});
 }
 
+//prompt if wanna show all bec it has xxxx rows
+// more specific bookTitle
+// make function for getBookThroughKeywords
 export function getBookTitle(db, req, res) {
     const title = req.body.queryResult.parameters.title;
     const queryString = 'SELECT title, author, category FROM book WHERE title like ?';
