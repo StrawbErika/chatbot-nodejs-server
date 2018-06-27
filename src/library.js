@@ -2,9 +2,9 @@
 
 //add name in schema
 export function addUser(db, req, res) {
-    const id = req.body.session;
+    const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
     const name = req.body.queryResult.parameters.name	
-    var queryString = `SELECT uid from user where uid='${id}'`;
+    var queryString = `SELECT uid from user where uid like '%${id}%'`;
     db.query(queryString, (err, rows) => {
         if(err) {
             console.log(err);
@@ -26,7 +26,7 @@ export function addUser(db, req, res) {
 }
 
 export function showBorrowedBooks(db, req, res) {
-    const id = req.body.session;
+    const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 	var queryString = `SELECT title, author FROM book WHERE uid = '${id}'`;
 
 	db.query(queryString, (err, rows) => {
@@ -57,8 +57,7 @@ export function showBorrowedBooks(db, req, res) {
 //double check
 export function borrowBook(db, req, res) {
 	const borrowed = req.body.queryResult.parameters.borrowed;
-	var queryString = `SELECT uid FROM book WHERE title = '${borrowed}'`;
-
+	var queryString = `SELECT title, uid FROM book WHERE title like '%${borrowed}%'`;
 	db.query(queryString, (err, rows) => {
 		if(err) {
 			console.log(err);
@@ -69,44 +68,53 @@ export function borrowBook(db, req, res) {
 		}
 
 		if(rows[0].uid){
-			return res.json({ fulfillmentText: `${borrowed} is already borrowed` });
+			var FBMessenger = require('fb-messenger');
+			var messenger = new FBMessenger("EAAHkRuPI8FUBAKkebDqfujPYrx47jk7VeSmgc2JYVUurG7UckHAwbyO19ZByz6RwRcVzyVE48gZCNI0i7ZALwkXJerKgnsppwgv4YTr4pHvHEZAPjkRUYroSDW9LMFw7yra2DImYKzYbyUN9o5KgantVgxGAYDVLXskDZA1wHbJZAnWhrZBO20V");
+			var num = parseInt(rows[0].uid, 10)
+			messenger.sendTextMessage(num, `Hello, someone wants to borrow ${borrowed}!`, function (err, body) {
+			if(err) return console.error(err)
+				console.log(body);
+			})
+			return res.json({ fulfillmentText: `${rows[0].title} is already borrowed` }); 
 		}
-
-        const id = req.body.session;
-		queryString = `UPDATE book SET uid = '${id}' WHERE title = '${borrowed}' ORDER BY title LIMIT 1`;
+		var output = `Found ${rows[0].title}! `
+		const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
+		queryString = `UPDATE book SET uid = '${id}' WHERE title = '${rows[0].title}' ORDER BY title LIMIT 1`;
 		
 		db.query(queryString, (err, rows) => {
 			if(err) {
 				console.log(err);
 			}
-			return res.json({ fulfillmentText: `Here is ${borrowed}` });
+			return res.json({ fulfillmentText: output + `You borrowed ${borrowed}` });
 		});
 	});
 }
 
 export function returnBook(db, req, res) {
 	const returned = req.body.queryResult.parameters.returned;
-	var queryString = `SELECT uid FROM book WHERE title = '${returned}'`;
-    const id = req.body.session;
+	console.log(req.body)
+	console.log("RETURNED: " + returned)
+	var queryString = `SELECT uid, title FROM book WHERE title like '%${returned}%'`;
 
 	db.query(queryString, (err, rows) => {
+		const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 		if(err) {
 			console.log(err);
 		}
 
 		if(!rows.length) {
-			return res.json({ fulfillmentText: `There is no such ${returned}️` });
+			return res.json({ fulfillmentText: `There is no such ${rows[0].title} ` });
 		}
 
 		if(!rows[0].uid){
-			return res.json({ fulfillmentText: `${returned} has already been returned` });
+			return res.json({ fulfillmentText: `${rows[0].title} has already been returned` });
 		}
 
         if(rows[0].uid != id){
-			return res.json({ fulfillmentText: `${returned} isn't even with you!` });
+			return res.json({ fulfillmentText: `${rows[0].title} isn't even with you!` });
         }
 
-		queryString = `UPDATE book SET uid = NULL WHERE title = '${returned}' ORDER BY title LIMIT 1`;
+		queryString = `UPDATE book SET uid = NULL WHERE title = '${rows[0].title}' ORDER BY title LIMIT 1`;
 		
 		db.query(queryString, (err, rows) => {
 			if(err) {
@@ -118,7 +126,8 @@ export function returnBook(db, req, res) {
 }
 
 //prompt if wanna show all bec it has xxxx rows
-//prompt if how many books per category want to see
+	//prompt if how many books per category want to see
+	// (need to check how to make follow up prompts)
 export function showAllBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book';
 
@@ -131,7 +140,10 @@ export function showAllBooks(db, req, res) {
 		if(!rows.length) {
 			return res.json({ fulfillmentText: 'There are no books in the db!'});
 		}
-        else{
+		// else if(rows.length > 100){	
+		// 	var output = "There are more than 100 books to show you, are you sure you want to proceed?"
+		// }
+		else{
             var books = 'Here are the books:';
             for(var i = 0; i < rows.length; i++) {
                 books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
