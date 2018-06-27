@@ -1,9 +1,21 @@
-//COMMENTS R TODO
-
 //add name in schema
+/*
 export function addUser(db, req, res) {
     const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-    const name = req.body.queryResult.parameters.name	
+    const name = req.body.queryResult.parameters.name;	
+	var queryString = `INSERT INTO user VALUES ('${id}')`;
+	db.query(queryString, (err, rows) => {
+		if(err) {
+			console.log(err);
+		} else {
+			return res.json({ fulfillmentText: `Hi ${name}! What do you want to do?` });
+		}
+	});
+}
+*/
+export function addUser(db, req, res) {
+    const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
+    const name = req.body.queryResult.parameters.name;	
     var queryString = `SELECT uid from user where uid like '%${id}%'`;
     db.query(queryString, (err, rows) => {
         if(err) {
@@ -59,6 +71,7 @@ export function borrowBook(db, req, res) {
 	const borrowed = req.body.queryResult.parameters.borrowed;
 	var queryString = `SELECT title, uid FROM book WHERE title like '%${borrowed}%'`;
 	db.query(queryString, (err, rows) => {
+		const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 		if(err) {
 			console.log(err);
 		}
@@ -68,17 +81,22 @@ export function borrowBook(db, req, res) {
 		}
 
 		if(rows[0].uid){
-			var FBMessenger = require('fb-messenger');
-			var messenger = new FBMessenger("EAAHkRuPI8FUBAKkebDqfujPYrx47jk7VeSmgc2JYVUurG7UckHAwbyO19ZByz6RwRcVzyVE48gZCNI0i7ZALwkXJerKgnsppwgv4YTr4pHvHEZAPjkRUYroSDW9LMFw7yra2DImYKzYbyUN9o5KgantVgxGAYDVLXskDZA1wHbJZAnWhrZBO20V");
-			var num = parseInt(rows[0].uid, 10)
-			messenger.sendTextMessage(num, `Hello, someone wants to borrow ${borrowed}!`, function (err, body) {
-			if(err) return console.error(err)
-				console.log(body);
-			})
-			return res.json({ fulfillmentText: `${rows[0].title} is already borrowed` }); 
+			if(rows[0].uid === id){
+				return res.json({ fulfillmentText: `You already have ${rows[0].title}!` }); 
+			}
+			else{
+				var FBMessenger = require('fb-messenger');
+				var messenger = new FBMessenger;("EAAHkRuPI8FUBAKkebDqfujPYrx47jk7VeSmgc2JYVUurG7UckHAwbyO19ZByz6RwRcVzyVE48gZCNI0i7ZALwkXJerKgnsppwgv4YTr4pHvHEZAPjkRUYroSDW9LMFw7yra2DImYKzYbyUN9o5KgantVgxGAYDVLXskDZA1wHbJZAnWhrZBO20V");
+				var num = parseInt(rows[0].uid, 10);
+				messenger.sendTextMessage(num, `Hello, someone wants to borrow ${borrowed}!`, function (err, body);
+				{
+				if(err) return console.error(err)
+					console.log(body);
+				})
+				return res.json({ fulfillmentText: `${rows[0].title} is already borrowed` }); 
+			}
 		}
 		var output = `Found ${rows[0].title}! `
-		const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 		queryString = `UPDATE book SET uid = '${id}' WHERE title = '${rows[0].title}' ORDER BY title LIMIT 1`;
 		
 		db.query(queryString, (err, rows) => {
@@ -92,8 +110,6 @@ export function borrowBook(db, req, res) {
 
 export function returnBook(db, req, res) {
 	const returned = req.body.queryResult.parameters.returned;
-	console.log(req.body)
-	console.log("RETURNED: " + returned)
 	var queryString = `SELECT uid, title FROM book WHERE title like '%${returned}%'`;
 
 	db.query(queryString, (err, rows) => {
@@ -140,9 +156,9 @@ export function showAllBooks(db, req, res) {
 		if(!rows.length) {
 			return res.json({ fulfillmentText: 'There are no books in the db!'});
 		}
-		// else if(rows.length > 100){	
-		// 	var output = "There are more than 100 books to show you, are you sure you want to proceed?"
-		// }
+		if(rows.length > 100){
+
+		}
 		else{
             var books = 'Here are the books:';
             for(var i = 0; i < rows.length; i++) {
@@ -199,8 +215,6 @@ export function showUnvailableBooks(db, req, res) {
 	});
 }
 
-//prompt if wanna show all bec it has xxxx rows
-//prompt if how many books per category want to see
 export function showAvailableBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book where uid is null';
 
