@@ -1,22 +1,8 @@
-//add name in schema
-/*
+
 export function addUser(db, req, res) {
     const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
     const name = req.body.queryResult.parameters.name;	
-	var queryString = `INSERT INTO user VALUES ('${id}')`;
-	db.query(queryString, (err, rows) => {
-		if(err) {
-			console.log(err);
-		} else {
-			return res.json({ fulfillmentText: `Hi ${name}! What do you want to do?` });
-		}
-	});
-}
-*/
-export function addUser(db, req, res) {
-    const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-    const name = req.body.queryResult.parameters.name;	
-    var queryString = `SELECT uid from user where uid like '%${id}%'`;
+    var queryString = `SELECT uid, name from user where uid like '%${id}%'`;
     db.query(queryString, (err, rows) => {
         if(err) {
             console.log(err);
@@ -30,8 +16,21 @@ export function addUser(db, req, res) {
                         return res.json({ fulfillmentText: `Hi ${name}! What do you want to do?` });
                     }
                 });
-            } else {
-                return res.json({ fulfillmentText: `Welcome back, ${name}! What do you want to do?` });
+            }else {
+				if(name === rows[0].name){
+					return res.json({ fulfillmentText: `Welcome back, ${rows[0].name}! What do you want to do?` });
+				}
+				else{
+					var text = `That's not your name, ${rows[0].name}! But I'll change it into ${name} for you! What do you want to do?`;
+					queryString = `UPDATE user SET name = '${name}' WHERE uid = '${id}' `;
+					db.query(queryString, (err, rows) => {
+						if(err) {
+							console.log(err);
+						} else {
+							return res.json({ fulfillmentText: text});
+						}
+					});	
+				}
             }
         }
     });
@@ -88,7 +87,7 @@ export function borrowBook(db, req, res) {
 				var FBMessenger = require('fb-messenger');
 				var messenger = new FBMessenger;("EAAHkRuPI8FUBAKkebDqfujPYrx47jk7VeSmgc2JYVUurG7UckHAwbyO19ZByz6RwRcVzyVE48gZCNI0i7ZALwkXJerKgnsppwgv4YTr4pHvHEZAPjkRUYroSDW9LMFw7yra2DImYKzYbyUN9o5KgantVgxGAYDVLXskDZA1wHbJZAnWhrZBO20V");
 				var num = parseInt(rows[0].uid, 10);
-				messenger.sendTextMessage(num, `Hello, someone wants to borrow ${borrowed}!`, function (err, body);
+				messenger.sendTextMessage(num, `Hello, someone wants to borrow ${borrowed}!`, function (err, body)
 				{
 				if(err) return console.error(err)
 					console.log(body);
@@ -193,7 +192,7 @@ export function showAllCategories(db, req, res) {
 
 //prompt if wanna show all bec it has xxxx rows (check if big number of row)
 //prompt if how many books per category want to see
-export function showUnvailableBooks(db, req, res) {
+export function showUnavailableBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book where uid is not null';
 
 	db.query(queryString, (err, rows) => {
