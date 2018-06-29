@@ -10,6 +10,7 @@ export default ({ config, db }) => {
 		const action = req.body.queryResult.action;
 		const output = {"fulfillmentText" : " "};
 		const parameters = req.body.queryResult.parameters;
+		console.log(action)
 		switch(action){ //switch case for actions chosen by the user
 			case 'inputWelcome':
 				output["fulfillmentText"] = "Welcome to book rental! What would you like me to call you?";
@@ -34,7 +35,14 @@ export default ({ config, db }) => {
 				return library.showBorrowedBooks(db, req, res);
 			case 'showUnavailableBooks':
 				return library.showUnavailableBooks(db, req, res);
-
+			case 'bye':
+				return res.json({"fulfillmentText":"Buhbye"})
+			case 'allPages':
+				return library.allPages(db, req, res);
+			case 'categoryPages':
+				return library.categoryPages(db, req, res);
+			case 'availablePages':
+				return library.availablePages(db, req, res);
 		}
 	});
 	api.get('/', (req, res) => {

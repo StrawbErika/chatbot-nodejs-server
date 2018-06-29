@@ -8,7 +8,7 @@ export function addUser(db, req, res) {
             console.log(err);
         } else {
             if(!rows.length) {
-                queryString = `INSERT INTO user VALUES ('${id}')`;
+                queryString = `INSERT INTO user VALUES ('${id}','${name}')`;
                 db.query(queryString, (err, rows) => {
                     if(err) {
                         console.log(err);
@@ -68,7 +68,7 @@ export function showBorrowedBooks(db, req, res) {
 //double check
 export function borrowBook(db, req, res) {
 	const borrowed = req.body.queryResult.parameters.borrowed;
-	var queryString = `SELECT title, uid FROM book WHERE title like '%${borrowed}%'`;
+	var queryString = `SELECT title, author, img, uid FROM book WHERE title like '%${borrowed}%'`;
 	db.query(queryString, (err, rows) => {
 		const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 		if(err) {
@@ -95,14 +95,38 @@ export function borrowBook(db, req, res) {
 				return res.json({ fulfillmentText: `${rows[0].title} is already borrowed` }); 
 			}
 		}
-		var output = `Found ${rows[0].title}! `
+		/*
+		"fulfillmentText": "Okay! Thank you for having us, goodbye!",
+		"fulfillmentMessages": [
+		  {
+			"card": {
+			  "title": "cat",
+			  "subtitle": "look at dis cat",
+			  "imageUri": "http://ecx.images-amazon.com/images/I/517kcRbFZQL.jpg"
+			},
+			"platform": "FACEBOOK"
+		  },
+		*/
+		const title = rows[0].title;
+		const author = rows[0].author;
+		const img = rows[0].img;
+		var output = [
+			{
+				"card": {
+					"title": title.slice(1,-1),
+					"subtitle": author.slice(1,-1),
+					"imageUri": img.slice(1,-1)
+				},
+				"platform": "FACEBOOK"
+			  }];
 		queryString = `UPDATE book SET uid = '${id}' WHERE title = '${rows[0].title}' ORDER BY title LIMIT 1`;
-		
+		console.log("borrowing");
 		db.query(queryString, (err, rows) => {
 			if(err) {
 				console.log(err);
 			}
-			return res.json({ fulfillmentText: output + `You borrowed ${borrowed}` });
+			console.log("borrowing");
+			return res.json({"fulfillmentMessages" : output});
 		});
 	});
 }
@@ -140,10 +164,8 @@ export function returnBook(db, req, res) {
 	});
 }
 
-//prompt if wanna show all bec it has xxxx rows
-	//prompt if how many books per category want to see
-	// (need to check how to make follow up prompts)
 export function showAllBooks(db, req, res) {
+	console.log("WARNING SHOW ALL BOOKS")
     const queryString = 'SELECT title, author, category FROM book';
 
 	db.query(queryString, (err, rows) => {
@@ -155,16 +177,34 @@ export function showAllBooks(db, req, res) {
 		if(!rows.length) {
 			return res.json({ fulfillmentText: 'There are no books in the db!'});
 		}
-		if(rows.length > 100){
-
+		if(rows.length > 50){
+			var output = `There are more than 50 books, to be exact there are ${rows.length} books. \n Type: All 1 to get the first 10 books!  `
+            return res.json({ fulfillmentText: output });
 		}
-		else{
-            var books = 'Here are the books:';
-            for(var i = 0; i < rows.length; i++) {
-                books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
-            }
-            return res.json({ fulfillmentText: books });
-        }
+    });
+}
+
+export function allPages(db, req, res) {
+    const queryString = 'SELECT title, author, category FROM book ORDER BY title ASC';
+    var page = (req.body.queryResult.parameters.page);
+
+	db.query(queryString, (err, rows) => {
+		if(err) {
+			console.log(err);
+			return res.json({ fulfillmentText: `Error!` });
+		}
+		if(!rows.length) {
+			return res.json({ fulfillmentText: 'There are no books in the db!'});
+		}
+		const startingPage = (page-1)*10;
+		page = page * 10
+		console.log(`from : ${startingPage} to ${page}`);
+		var books = `Here are books from ${startingPage} to ${page}:`;
+		for(var i = startingPage; i < page; i++) {
+			books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+		}
+		console.log(books);
+		return res.json({ fulfillmentText: books });
     });
 }
 
@@ -190,8 +230,6 @@ export function showAllCategories(db, req, res) {
     });
 }
 
-//prompt if wanna show all bec it has xxxx rows (check if big number of row)
-//prompt if how many books per category want to see
 export function showUnavailableBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book where uid is not null';
 
@@ -223,11 +261,12 @@ export function showAvailableBooks(db, req, res) {
 			return res.json({ fulfillmentText: `Error!` });
 		}
 
-		if(!rows.length) {
-			return res.json({ fulfillmentText: 'There are no available books in the db!'});
+		if(rows.length > 50){
+			var output = `There are more than 50 books, to be exact there are ${rows.length} books. \n Type: Available 1 to get the first 10 books!  `
+			return res.json({ fulfillmentText: output });
 		}
-        else{
-            var books = 'Here are the books:';
+		else{
+            var books = 'Here are the available books' + '\n\n';
             for(var i = 0; i < rows.length; i++) {
                 books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
             }
@@ -235,6 +274,31 @@ export function showAvailableBooks(db, req, res) {
         }
 	});
 }
+
+export function availablePages(db, req, res) {
+    const queryString = 'SELECT title, author, category FROM book where uid is null ORDER by title ASC';
+	var page = (req.body.queryResult.parameters.page);
+
+	db.query(queryString, (err, rows) => {
+		if(err) {
+			console.log(err);
+			return res.json({ fulfillmentText: `Error!` });
+		}
+		if(!rows.length) {
+			return res.json({ fulfillmentText: 'There are no books in the db!'});
+		}
+		const startingPage = (page-1)*10;
+		page = page * 10
+		console.log(`from : ${startingPage} to ${page}`);
+		var books = `Here are the available books from ${startingPage} to ${page}:`;
+		for(var i = startingPage; i < page; i++) {
+			books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+		}
+		return res.json({ fulfillmentText: books });
+    });
+}
+
+
 
 export function getBookAuthor(db, req, res) {
     const author = req.body.queryResult.parameters.author;
@@ -259,9 +323,7 @@ export function getBookAuthor(db, req, res) {
 	});
 }
 
-//prompt if wanna show all bec it has xxxx rows
-// more specific bookTitle
-// make function for getBookThroughKeywords
+
 export function getBookTitle(db, req, res) {
     const title = req.body.queryResult.parameters.title;
     const queryString = 'SELECT title, author, category FROM book WHERE title like ?';
@@ -276,11 +338,16 @@ export function getBookTitle(db, req, res) {
 			return res.json({ fulfillmentText: `We don't have anything ${title}!`});
 		}
         else{
-            var books = 'Here are the books with title: ' + title + '\n\n';
-            for(var i = 0; i < rows.length; i++) {
-                books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
-            }
-            return res.json({ fulfillmentText: books });
+			if(rows.length == 1){
+				return res.json({ fulfillmentText: `Here is the book titled: ${rows.name}`});
+			}
+			else{
+				var books = 'Here are the books with title: ' + title + '\n\n';
+				for(var i = 0; i < rows.length; i++) {
+					books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+				}
+				return res.json({ fulfillmentText: books });
+			}
         }
 	});
 }
@@ -298,7 +365,11 @@ export function getBookCategory(db, req, res) {
 		if(!rows.length) {
 			return res.json({ fulfillmentText: `We don't have anything in ${category}! :'(`});
 		}
-        else{
+		if(rows.length > 50){
+			var output = `There are more than 50 books, to be exact there are ${rows.length} books. \n Type: ${category} 1 to get the first 10 books!  `
+			return res.json({ fulfillmentText: output });
+		}
+		else{
             var books = 'Here are the books with category: ' + category + '\n\n';
             for(var i = 0; i < rows.length; i++) {
                 books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
@@ -306,5 +377,28 @@ export function getBookCategory(db, req, res) {
             return res.json({ fulfillmentText: books });
         }
 	});
+}
+
+export function categoryPages(db, req, res) {
+	const category = req.body.queryResult.parameters.category;
+    const queryString = 'SELECT title, author, category FROM book WHERE category like? ORDER by title ASC';
+	var page = (req.body.queryResult.parameters.page);
+	db.query(queryString, '%' + category + '%', (err, rows) => {
+		if(err) {
+			console.log(err);
+			return res.json({ fulfillmentText: `Error!` });
+		}
+		if(!rows.length) {
+			return res.json({ fulfillmentText: 'There are no books in the db!'});
+		}
+		const startingPage = (page-1)*10;
+		page = page * 10
+		console.log(`from : ${startingPage} to ${page}`);
+		var books = `Here are ${category} books from ${startingPage} to ${page}:`;
+		for(var i = startingPage; i < page; i++) {
+			books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+		}
+		return res.json({ fulfillmentText: books });
+    });
 }
 
