@@ -1,3 +1,4 @@
+DROP DATABASE library;
 CREATE DATABASE library;
 
 USE library;
@@ -10,6 +11,7 @@ constraint user_uid_pk primary key(uid)
 
 CREATE TABLE book(
 bid VARCHAR(100),
+img VARCHAR(200),
 title VARCHAR(100),
 author VARCHAR(100),
 category VARCHAR(100),
