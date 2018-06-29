@@ -16,7 +16,7 @@ export default ({ config, db }) => {
 				output["fulfillmentText"] = "Welcome to book rental! What would you like me to call you?";
 				return res.json(output);
 			case 'getName':
-				return library.addUser(db, req, res);
+				return library.checkUser(db, req, res);
 			case 'getBookTitle':
 				return library.getBookTitle(db, req, res);
 			case 'getBookAuthor':
@@ -43,6 +43,8 @@ export default ({ config, db }) => {
 				return library.categoryPages(db, req, res);
 			case 'availablePages':
 				return library.availablePages(db, req, res);
+			case 'titlePages':
+				return library.titlePages(db, req, res);
 		}
 	});
 	api.get('/', (req, res) => {
