@@ -1,7 +1,7 @@
 import { version } from '../../package.json';
 import { Router } from 'express';
 import facets from './facets';
-import * as library from '../library';
+import * as library from '../functions/library';
 
 export default ({ config, db }) => {
 	let api = Router();

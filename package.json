@@ -36,6 +36,7 @@
     "fb-messenger": "^1.2.0",
     "morgan": "^1.8.0",
     "mysql": "^2.15.0",
+    "node-fetch": "^2.1.2",
     "resource-router-middleware": "^0.6.0",
     "unirest": "^0.5.1"
   },

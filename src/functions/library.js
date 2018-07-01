@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+import * as fb from './fbFunctions';
 
 export function checkUser(db, req, res) {
     const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
@@ -50,7 +52,7 @@ export function updateUser(db, req, res, text){
 
 export function showBorrowedBooks(db, req, res) {
     const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-	var queryString = `SELECT title, author FROM book WHERE uid = '${id}'`;
+	var queryString = `SELECT title, author, img FROM book WHERE uid = '${id}'`;
 
 	db.query(queryString, (err, rows) => {
 		if(err) {
@@ -62,13 +64,16 @@ export function showBorrowedBooks(db, req, res) {
 		}
 
 		else{
-			var books = 'Here are all your books ';
+			var books = [];
 			for(var i = 0; i < rows.length; i++) {
-				books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author;
+				const title = rows[0].title.slice(1,-1);
+				const author = rows[0].author.slice(1,-1);
+				const img = rows[0].img.slice(1,-1);
+				const card = fb.fbCard(title, author, img);
+				books.push(card);
 			}
-			return res.json({ fulfillmentText: books });
+			return res.json({"fulfillmentMessages" : books});
 		}
-
 	});
 }
 
@@ -76,8 +81,8 @@ export function showBorrowedBooks(db, req, res) {
 export function borrowBook(db, req, res) {
 	const borrowed = req.body.queryResult.parameters.borrowed;
 	var queryString = `SELECT title, author, img, uid FROM book WHERE title like '%${borrowed}%'`;
+	const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 	db.query(queryString, (err, rows) => {
-		const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 		if(err) {
 			console.log(err);
 		}
@@ -92,14 +97,15 @@ export function borrowBook(db, req, res) {
 			}
 			else{	
 				var num = parseInt(rows[0].uid, 10);
-				pushNotifMessage(db, req, res, id, `Someone wants to borrow ${rows[0].title}`);
+				const notification = `Someone wants to borrow, ${rows[0].title}. Please return it!` ;
+				fb.pushQuickReplies(num, notification, ['Return ' + `${rows[0].title}`]);
 				return res.json({ fulfillmentText: `${rows[0].title} is already borrowed` }); 
 			}
 		}
-		const title = rows[0].title;
-		const author = rows[0].author;
-		const img = rows[0].img;
-		const card = fbCard(title.slice(1,-1), author.slice(1,-1), img.slice(1,-1));
+		const title = rows[0].title.slice(1,-1);
+		const author = rows[0].author.slice(1,-1);
+		const img = rows[0].img.slice(1,-1);
+		const card = fb.fbCard(title, author, img);
 		updateBorrowBook(db, res, title, id, card);
 	});
 }
@@ -110,35 +116,12 @@ export function updateBorrowBook(db, res, title, id, card){
 		if(err) {
 			console.log(err);
 		}
-		pushNotifMessage(id, `Here's` + " " + title.slice(1,-1));
-		return res.json({"fulfillmentMessages" : card});
+		var msg = `Here's` + " " + title.slice(1,-1);
+		fb.pushMessage(id, msg);	
+		return res.json({"fulfillmentMessages" : [card]});
 	});
 }
 
-export function fbCard(title, subtitle, img){
-	var output = [
-		{
-			"card": {
-				"title": title,
-				"subtitle": subtitle,
-				"imageUri": img
-			},
-			"platform": "FACEBOOK"
-		  }];
-	return output;
-}
-
-export function pushNotifMessage(id, message){
-	var FBMessenger = require('fb-messenger');
-	var messenger = new FBMessenger;("EAAHkRuPI8FUBAKkebDqfujPYrx47jk7VeSmgc2JYVUurG7UckHAwbyO19ZByz6RwRcVzyVE48gZCNI0i7ZALwkXJerKgnsppwgv4YTr4pHvHEZAPjkRUYroSDW9LMFw7yra2DImYKzYbyUN9o5KgantVgxGAYDVLXskDZA1wHbJZAnWhrZBO20V");
-	console.log(message);
-	console.log(id);
-	messenger.sendTextMessage(id, message, function (err, body)
-	{
-	if(err) return console.error(err)
-		console.log(body);
-	})
-}
 
 export function returnBook(db, req, res) {
 	const returned = req.body.queryResult.parameters.returned;
@@ -160,21 +143,23 @@ export function returnBook(db, req, res) {
 
         if(rows[0].uid != id){
 			return res.json({ fulfillmentText: `${rows[0].title} isn't even with you!` });
-        }
+		}
+		return updateReturnBook(db, req, res, rows[0].title);
+	});
+}
 
-		queryString = `UPDATE book SET uid = NULL WHERE title = '${rows[0].title}' ORDER BY title LIMIT 1`;
+export function updateReturnBook(db, req, res, title){
+	queryString = `UPDATE book SET uid = NULL WHERE title = '${title}' ORDER BY title LIMIT 1`;
 		
-		db.query(queryString, (err, rows) => {
-			if(err) {
-				console.log(err);
-			}
-			return res.json({ fulfillmentText: `Thank you for returning, ${returned}` });
-		});
+	db.query(queryString, (err, rows) => {
+		if(err) {
+			console.log(err);
+		}
+		return res.json({ fulfillmentText: `Thank you for returning, ${returned}` });
 	});
 }
 
 export function showAllBooks(db, req, res) {
-	console.log("WARNING SHOW ALL BOOKS")
     const queryString = 'SELECT title, author, category FROM book';
 
 	db.query(queryString, (err, rows) => {
@@ -187,22 +172,18 @@ export function showAllBooks(db, req, res) {
 			return res.json({ fulfillmentText: 'There are no books in the db!'});
 		}
 		if(rows.length > 50){
-			var output = [
-				{
-					"quickReplies": {
-					  "title": `There are more than 50 books, to be exact there are ${rows.length} books. \n Type: All 1 to get the first 10 books! Or click one of these!`,
-					  "quickReplies": [
-						  `All 1`,
-						  `All 5`,
-						  `All 10`,
-						  `All 100`,
-					  ]
-					},
-					"platform": "FACEBOOK"
-				  }];
-			return res.json({"fulfillmentMessages" : output});		}
+			return res.json({"fulfillmentMessages" : fb.quickReplies(
+				`There are more than 50 books, to be exact there are ${rows.length} books. \n Type: All 1 to get the first 10 books! Or click one of these!`, 
+				[
+					`All 1`,
+					`All 5`,
+					`All 10`,
+					`All 100`,
+				])});
+		}
     });
 }
+
 
 export function allPages(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book ORDER BY title ASC';
@@ -282,20 +263,14 @@ export function showAvailableBooks(db, req, res) {
 		}
 
 		if(rows.length > 50){
-			var output = [
-				{
-					"quickReplies": {
-					  "title": `There are more than 50 books, to be exact there are ${rows.length} books. \n Type: Available 1 to get the first 10 books! Or click one of these!`,
-					  "quickReplies": [ 
-						  `Available 1`,
-						  `Available 5`,
-						  `Available 10`,
-						  `Available 100`,
-					  ]
-					},
-					"platform": "FACEBOOK"
-				  }];
-			return res.json({"fulfillmentMessages" : output});		
+			return res.json({"fulfillmentMessages" : fb.quickReplies(
+			`There are more than 50 books, to be exact there are ${rows.length} books. \n Type: Available 1 to get the first 10 books! Or click one of these!`, 
+			[
+				`Available 1`,
+				`Available 5`,
+				`Available 10`,
+				`Available 100`,
+			])});
 		}
 		else{
             var books = 'Here are the available books' + '\n\n';
@@ -327,10 +302,8 @@ export function availablePages(db, req, res) {
 			books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
 		}
 		return res.json({ fulfillmentText: books });
-    });
+	});
 }
-
-
 
 export function getBookAuthor(db, req, res) {
     const author = req.body.queryResult.parameters.author;
@@ -370,34 +343,22 @@ export function getBookTitle(db, req, res) {
 		}
         else{
 			if(rows.length == 1){
-				var output = [
-					{
-						"quickReplies": {
-						  "title": `Would you like to borrow that book? Click this!`,
-						  "quickReplies": [ 
-							  `Borrow ${title}`,
-						  ]
-						},
-						"platform": "FACEBOOK"
-					  }];
-				return res.json({"fulfillmentMessages" : output});
+				return res.json({"fulfillmentMessages" : fb.quickReplies(
+					`Would you like to borrow that book? Click this!`, 
+					[
+						`Borrow ${title}`,
+					])});
 			}
 			else{
 				if(rows.length > 50){
-					var output = [
-						{
-							"quickReplies": {
-							  "title": `There are more than 50 books, to be exact there are ${rows.length} books. \n Type: ${title} 1 to get the first 10 books! Or click one of these!`,
-							  "quickReplies": [
-								  `${title} 1`,
-								  `${title} 5`,
-								  `${title} 10`,
-								  `${title} 100`,
-							  ]
-							},
-							"platform": "FACEBOOK"
-						  }];
-					return res.json({"fulfillmentMessages" : output});
+					return res.json({"fulfillmentMessages" : fb.quickReplies(
+						`There are more than 50 books, to be exact there are ${rows.length} books. \n Type: ${title} 1 to get the first 10 books! Or click one of these!`, 
+						[
+							`${title} 1`,
+							`${title} 5`,
+							`${title} 10`,
+							`${title} 100`,
+						])});
 				}
 				var books = 'Here are the books with title: ' + title + '\n\n';
 				for(var i = 0; i < rows.length; i++) {
@@ -408,7 +369,6 @@ export function getBookTitle(db, req, res) {
         }
 	});
 }
-
 export function titlePages(db, req, res) {
 	var page = (req.body.queryResult.parameters.page);
     const title = req.body.queryResult.parameters.title;
@@ -446,20 +406,15 @@ export function getBookCategory(db, req, res) {
 			return res.json({ fulfillmentText: `We don't have anything in ${category}! :'(`});
 		}
 		if(rows.length > 50){
-			var output = [
-				{
-					"quickReplies": {
-					  "title": `There are more than 50 books, to be exact there are ${rows.length} books. \n Type: ${category} 1 to get the first 10 books! Or click one of these!`,
-					  "quickReplies": [
-						  `${category} 1`,
-						  `${category} 5`,
-						  `${category} 10`,
-						  `${category} 100`,
-					  ]
-					},
-					"platform": "FACEBOOK"
-				  }];
-			return res.json({"fulfillmentMessages" : output});
+			return res.json({"fulfillmentMessages" : fb.quickReplies(
+				`There are more than 50 books, to be exact there are ${rows.length} books. \n Type: ${category} 1 to get the first 10 books! Or click one of these!`, 
+				[
+					`${category} 1`,
+					`${category} 5`,
+					`${category} 10`,
+					`${category} 100`,
+				])});
+
 		}
 		else{
             var books = 'Here are the books with category: ' + category + '\n\n';
