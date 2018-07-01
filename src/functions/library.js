@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import * as fb from './fbFunctions';
 
 export function checkUser(db, req, res) {
@@ -66,9 +65,9 @@ export function showBorrowedBooks(db, req, res) {
 		else{
 			var books = [];
 			for(var i = 0; i < rows.length; i++) {
-				const title = rows[0].title.slice(1,-1);
-				const author = rows[0].author.slice(1,-1);
-				const img = rows[0].img.slice(1,-1);
+				const title = rows[i].title.slice(1,-1);
+				const author = rows[i].author.slice(1,-1);
+				const img = rows[i].img.slice(1,-1);
 				const card = fb.fbCard(title, author, img);
 				books.push(card);
 			}
@@ -171,15 +170,15 @@ export function showAllBooks(db, req, res) {
 		if(!rows.length) {
 			return res.json({ fulfillmentText: 'There are no books in the db!'});
 		}
-		if(rows.length > 50){
-			return res.json({"fulfillmentMessages" : fb.quickReplies(
-				`There are more than 50 books, to be exact there are ${rows.length} books. \n Type: All 1 to get the first 10 books! Or click one of these!`, 
-				[
-					`All 1`,
-					`All 5`,
-					`All 10`,
-					`All 100`,
-				])});
+		if(rows.length > 20){
+			var pages = [];
+			for(var i = 0; i < rows.length/10; i++) {
+				var pageNum = `${i+1} : All `;
+				pages.push(pageNum);						
+			}
+
+			return res.json({"fulfillmentMessages" : [fb.quickReplies(
+				`There are more than 20 books, to be exact there are ${rows.length} books. \n Type: 1 : All to get the first 10 books! Or click one of these!`, pages)]});
 		}
     });
 }
@@ -262,9 +261,9 @@ export function showAvailableBooks(db, req, res) {
 			return res.json({ fulfillmentText: `Error!` });
 		}
 
-		if(rows.length > 50){
+		if(rows.length > 20){
 			return res.json({"fulfillmentMessages" : fb.quickReplies(
-			`There are more than 50 books, to be exact there are ${rows.length} books. \n Type: Available 1 to get the first 10 books! Or click one of these!`, 
+			`There are more than 20 books, to be exact there are ${rows.length} books. \n Type: Available 1 to get the first 10 books! Or click one of these!`, 
 			[
 				`Available 1`,
 				`Available 5`,
@@ -350,30 +349,41 @@ export function getBookTitle(db, req, res) {
 					])});
 			}
 			else{
-				if(rows.length > 50){
-					return res.json({"fulfillmentMessages" : fb.quickReplies(
-						`There are more than 50 books, to be exact there are ${rows.length} books. \n Type: ${title} 1 to get the first 10 books! Or click one of these!`, 
-						[
-							`${title} 1`,
-							`${title} 5`,
-							`${title} 10`,
-							`${title} 100`,
-						])});
+				if(rows.length > 20){
+					var pages = [];
+					for(var i = 0; i < rows.length/10; i++) {
+						var pageNum = `Title ${i+1} : ${title} `;
+						pages.push(pageNum);						
+					}
+
+					return res.json({"fulfillmentMessages" : [fb.quickReplies(
+						`There are more than 20 books, to be exact there are ${rows.length} books. \n Type: Title 1 : ${title} to get the first 10 books! Or click one of these!`, pages)]});
 				}
-				var books = 'Here are the books with title: ' + title + '\n\n';
-				for(var i = 0; i < rows.length; i++) {
-					books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+				else{
+					var books = 'Here are the books with title: ' + title + '\n\n';
+					for(var i = 0; i < rows.length; i++) {
+						books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+					}
+					return res.json({ fulfillmentText: books });
 				}
-				return res.json({ fulfillmentText: books });
 			}
         }
 	});
 }
+
+// borrow <title> 
+// i'm returning <title>
+// what books are in <category> 
+// show me <title>
+// books by <author>
+
+
 export function titlePages(db, req, res) {
-	var page = (req.body.queryResult.parameters.page);
-    const title = req.body.queryResult.parameters.title;
-    const queryString = 'SELECT title, author, category FROM book WHERE title like ?';
-	db.query(queryString, '%' + title + '%', (err, rows) => {
+	const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
+	var page = req.body.queryResult.parameters.page;
+    const ptitle = req.body.queryResult.parameters.title;
+    const queryString = 'SELECT title, author, img FROM book WHERE title like ?';
+	db.query(queryString, '%' + ptitle + '%', (err, rows) => {
 		if(err) {
 			console.log(err);
 			return res.json({ fulfillmentText: `Error!` });
@@ -382,13 +392,25 @@ export function titlePages(db, req, res) {
 			return res.json({ fulfillmentText: 'There are no books in the db!'});
 		}
 		const startingPage = (page-1)*10;
-		page = page * 10
-		console.log(`from : ${startingPage} to ${page}`);
-		var books = `Here are books with title: ${title} from ${startingPage} to ${page}:`;
-		for(var i = startingPage; i < page; i++) {
-			books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+		if(page === Math.floor((rows.length/10))+1){
+			const excess = rows.length % 10;
+			page = (page-1) * 10 + excess;
 		}
-		return res.json({ fulfillmentText: books });
+		else{
+			page = page * 10
+		}
+
+		var msg = `Here are books with title: ${ptitle} from ${startingPage} to ${page}:`;
+		var books = [];
+		for(var i = startingPage; i < page; i++) {
+			var title = rows[i].title.slice(1,-1);
+			const author = rows[i].author.slice(1,-1);
+			const img = rows[i].img.slice(1,-1);
+			const card = fb.fbCard(title, author, img);
+			books.push(card);
+		}
+		fb.pushMessage(id, msg);	
+		return res.json({"fulfillmentMessages" : books});
     });
 }
 
@@ -405,9 +427,9 @@ export function getBookCategory(db, req, res) {
 		if(!rows.length) {
 			return res.json({ fulfillmentText: `We don't have anything in ${category}! :'(`});
 		}
-		if(rows.length > 50){
+		if(rows.length > 20){
 			return res.json({"fulfillmentMessages" : fb.quickReplies(
-				`There are more than 50 books, to be exact there are ${rows.length} books. \n Type: ${category} 1 to get the first 10 books! Or click one of these!`, 
+				`There are more than 20 books, to be exact there are ${rows.length} books. \n Type: ${category} 1 to get the first 10 books! Or click one of these!`, 
 				[
 					`${category} 1`,
 					`${category} 5`,

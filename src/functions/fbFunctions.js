@@ -1,7 +1,9 @@
+import fetch from 'node-fetch';
+
 export function quickReplies(title, quickReplies){
 	return {
 		"quickReplies": {
-		  "title": title,
+          "title": title,
 		  "quickReplies": quickReplies 
 		},
 		"platform": "FACEBOOK"
