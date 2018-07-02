@@ -5,6 +5,11 @@ import * as library from '../functions/library';
 import * as user from '../functions/userFunctions';
 import * as search from '../functions/searchFunctions';
 
+// 2 slides containing end to end system 
+// Intro what bot does : my bot does this, Methodologies [tech etc ahha]
+// UI 
+//BROADCAST WEB APP 
+
 export default ({ config, db }) => {
 	let api = Router();
 
@@ -16,6 +21,7 @@ export default ({ config, db }) => {
 		switch(action){ //switch case for actions chosen by the user
 			case 'inputWelcome':
 				output["fulfillmentText"] = "Welcome to book rental! What would you like me to call you?";
+				console.log(req.body);
 				return res.json(output);
 			case 'getName':
 				return user.checkUser(db, req, res);
@@ -57,15 +63,6 @@ export default ({ config, db }) => {
 			case 'showUnavailableBooks':
 				return search.showUnavailableBooks(db, req, res);
 
-		}
-	});
-
-	api.post('/bikeRental', (req, res) => {
-		const action = req.body.queryResult.action;
-		const output = {"fulfillmentText" : " "};
-		const parameters = req.body.queryResult.parameters;
-		console.log(action)
-		switch(action){ //switch case for actions chosen by the user
 		}
 	});
 

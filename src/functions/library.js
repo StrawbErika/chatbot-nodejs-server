@@ -19,8 +19,8 @@ export function borrowBook(db, req, res) {
 			}
 			else{	
 				var num = parseInt(rows[0].uid, 10);
-				const notification = `Someone wants to borrow, ${rows[0].title}. Please return it!` ;
-				fb.pushQuickReplies(num, notification, ['Return ' + `${rows[0].title}`],"http://ecx.images-amazon.com/images/I/51M30qz3jyL.jpg");
+				const notification = `Someone wants to borrow, ${rows[0].title}. \nType Return ${rows[0].title}`;
+				// fb.pushQuickReplies(num, notification, ['Return ' + `${rows[0].title}`]);
 				return res.json({ fulfillmentText: `${rows[0].title} is already borrowed` }); 
 			}
 		}
