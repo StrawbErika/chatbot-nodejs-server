@@ -59,6 +59,16 @@ export default ({ config, db }) => {
 
 		}
 	});
+
+	api.post('/bikeRental', (req, res) => {
+		const action = req.body.queryResult.action;
+		const output = {"fulfillmentText" : " "};
+		const parameters = req.body.queryResult.parameters;
+		console.log(action)
+		switch(action){ //switch case for actions chosen by the user
+		}
+	});
+
 	api.get('/', (req, res) => {
 		res.send('fite me');
 	});

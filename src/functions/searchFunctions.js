@@ -28,8 +28,6 @@ export function showBorrowedBooks(db, req, res) {
 	});
 }
 
-//double check
-
 export function showAllBooks(db, req, res) {
     const queryString = 'SELECT title, author, category FROM book';
 
