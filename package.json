@@ -29,6 +29,7 @@
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.13.3",
+    "claudia-bot-builder": "^4.1.0",
     "compression": "^1.5.2",
     "convert-csv-to-json": "0.0.13",
     "cors": "^2.7.1",

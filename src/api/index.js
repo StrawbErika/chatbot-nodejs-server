@@ -2,6 +2,8 @@ import { version } from '../../package.json';
 import { Router } from 'express';
 import facets from './facets';
 import * as library from '../functions/library';
+import * as user from '../functions/userFunctions';
+import * as search from '../functions/searchFunctions';
 
 export default ({ config, db }) => {
 	let api = Router();
@@ -16,22 +18,24 @@ export default ({ config, db }) => {
 				output["fulfillmentText"] = "Welcome to book rental! What would you like me to call you?";
 				return res.json(output);
 			case 'getName':
-				return library.checkUser(db, req, res);
-
+				return user.checkUser(db, req, res);
+			case 'help':
+				return user.help(db, req, res);
+				
 			case 'getBookAuthor':
-				return library.getBookAuthor(db, req, res);
+				return search.getBookAuthor(db, req, res);
 
 			case 'getBookTitle':
-				return library.getBookTitle(db, req, res);
+				return search.getBookTitle(db, req, res);
 			case 'titlePages':
-				return library.titlePages(db, req, res);
+				return search.titlePages(db, req, res);
 
 			case 'getBookCategory':
-				return library.getBookCategory(db, req, res);
+				return search.getBookCategory(db, req, res);
 			case 'categoryPages':
-				return library.categoryPages(db, req, res);
+				return search.categoryPages(db, req, res);
 			case 'showAllCategories':
-				return library.showAllCategories(db, req, res);
+				return search.showAllCategories(db, req, res);
 
 			case 'returnBook':
 				return library.returnBook(db, req, res);
@@ -39,21 +43,20 @@ export default ({ config, db }) => {
 				return library.borrowBook(db, req, res);
 
 			case 'showAllBooks':
-				return library.showAllBooks(db, req, res);
+				return search.showAllBooks(db, req, res);
 			case 'allPages':
-				return library.allPages(db, req, res);
+				return search.allPages(db, req, res);
 				
 			case 'showAvailableBooks':
-				return library.showAvailableBooks(db, req, res);
+				return search.showAvailableBooks(db, req, res);
 			case 'availablePages':
-				return library.availablePages(db, req, res);
-				
+				return search.availablePages(db, req, res);
+
 			case 'showBorrowedBooks':
-				return library.showBorrowedBooks(db, req, res);
+				return search.showBorrowedBooks(db, req, res);
 			case 'showUnavailableBooks':
-				return library.showUnavailableBooks(db, req, res);
-			case 'bye':
-				return res.json({"fulfillmentText":"Buhbye"})
+				return search.showUnavailableBooks(db, req, res);
+
 		}
 	});
 	api.get('/', (req, res) => {

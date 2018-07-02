@@ -4,7 +4,7 @@ export function quickReplies(title, quickReplies){
 	return {
 		"quickReplies": {
           "title": title,
-		  "quickReplies": quickReplies 
+		  "quickReplies": quickReplies,
 		},
 		"platform": "FACEBOOK"
 	  }
@@ -33,7 +33,7 @@ export function pushNotif(id, payload) {
 		.catch((e) => { console.log(e); });
 }
 
-export function pushQuickReplies(id, text, replies) {
+export function pushQuickReplies(id, text, replies, img) {
 	pushNotif(id, {
 		messaging_type: 'UPDATE',
 		recipient: {
@@ -44,6 +44,7 @@ export function pushQuickReplies(id, text, replies) {
 			quick_replies: replies.map(reply => {
 				return {
 					content_type: 'text',
+					image_url:img,
 					title: reply,
 					payload: reply
 				}
@@ -51,6 +52,7 @@ export function pushQuickReplies(id, text, replies) {
 		}
 	});
 }
+
 
 export function pushMessage(id, text) {
 	pushNotif(id, {
@@ -62,4 +64,36 @@ export function pushMessage(id, text) {
 			text: text,
 		}
 	});
+}
+
+export function cardQuickMessages(title, img, subtitle, url, quickReply){
+	return {'fulfillmentMessages': [{
+        'payload': {
+            "facebook": {
+                "attachment": {
+                    "type": "template",
+                    "payload": {
+                        "template_type": "generic",
+                        "elements": [           {
+                            "title": title,
+                            "image_url": img,
+                            "subtitle": subtitle,
+                            "default_action": {
+                              "type": "web_url",
+                              "url": url,
+                              "webview_height_ratio": "tall",
+                            },
+                            "buttons":[
+                              {
+                                "type":"postback",
+                                "title": quickReply,
+                                "payload": quickReply
+                              }              
+                            ]}]
+                    }
+                }
+            }
+        }
+        }]
+    }
 }
