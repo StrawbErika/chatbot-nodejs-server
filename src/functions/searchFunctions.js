@@ -21,8 +21,9 @@ export function showBorrowedBooks(db, req, res) {
 				const img = rows[i].img.slice(1,-1);
 				const card = fb.fbCard(title, author, img);
 				books.push(card);
-			}
-			return res.json({"fulfillmentMessages" : books});
+            }
+    		fb.pushMessage(id, `Here are your borrowed books!`);	
+            return res.json({"fulfillmentMessages" : books});
 		}
 	});
 }
@@ -55,9 +56,9 @@ export function showAllBooks(db, req, res) {
 
 
 export function allPages(db, req, res) {
-    const queryString = 'SELECT title, author, category FROM book ORDER BY title ASC';
-    var page = (req.body.queryResult.parameters.page);
-
+    const queryString = 'SELECT title, author, category, img FROM book ORDER BY title ASC';
+    var page = req.body.queryResult.parameters.page;
+    const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 	db.query(queryString, (err, rows) => {
 		if(err) {
 			console.log(err);
@@ -67,16 +68,26 @@ export function allPages(db, req, res) {
 			return res.json({ fulfillmentText: 'There are no books in the db!'});
 		}
 		const startingPage = (page-1)*10;
-		page = page * 10
-		console.log(`from : ${startingPage} to ${page}`);
-		var books = `Here are books from ${startingPage} to ${page}:`;
-		for(var i = startingPage; i < page; i++) {
-			books += '\n\n' + rows[i].title + '\nAuthor: ' + rows[i].author + '\nCategory: ' + rows[i].category;
+		if(page === Math.floor((rows.length/10))+1){
+			const excess = rows.length % 10;
+			var pageNum = (page-1) * 10 + excess;
 		}
-		return res.json({ fulfillmentText: books });
-    });
+		else{
+			pageNum = page * 10
+		}
+		var msg = `Here are the books from ${startingPage} to ${pageNum}:`;
+        var books = [];
+		for(var i = startingPage; i < pageNum; i++) {
+			var title = rows[i].title;
+			const author = rows[i].author;
+            const img = rows[i].img;
+			const card = fb.fbCard(title.slice(1,-1), author.slice(1,-1), img.slice(1,-1));
+			books.push(card);
+		}
+		fb.pushQuickReplies(id, msg, [`${page+1} : All `, `${page+2} : All `, `${page+3} : All `, `${page+4} : All `, `${page+5} : All `]);	
+		return res.json({"fulfillmentMessages" : books});
+    })
 }
-
 export function showAllCategories(db, req, res) {
     const queryString = 'SELECT DISTINCT category FROM book';
 
@@ -256,13 +267,13 @@ export function titlePages(db, req, res) {
 		const startingPage = (page-1)*10;
 		if(page === Math.floor((rows.length/10))+1){
 			const excess = rows.length % 10;
-			page = (page-1) * 10 + excess;
+			var pageNum = (page-1) * 10 + excess;
 		}
 		else{
-			page = page * 10
+			pageNum = page * 10
 		}
 
-		var msg = `Here are books with title: ${ptitle} from ${startingPage} to ${page}:`;
+		var msg = `Here are books with title: ${ptitle} from ${startingPage} to ${pageNum}:`;
 		var books = [];
 		for(var i = startingPage; i < page; i++) {
 			var title = rows[i].title.slice(1,-1);
@@ -270,8 +281,8 @@ export function titlePages(db, req, res) {
 			const img = rows[i].img.slice(1,-1);
 			const card = fb.fbCard(title, author, img);
 			books.push(card);
-		}
-		fb.pushMessage(id, msg);	
+        }
+        fb.pushQuickReplies(id, msg, [`${page+1} : All `, `${page+2} : All `, `${page+3} : All `, `${page+4} : All `, `${page+5} : All `]);	
 		return res.json({"fulfillmentMessages" : books});
     });
 }

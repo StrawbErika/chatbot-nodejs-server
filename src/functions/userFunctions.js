@@ -52,5 +52,14 @@ export function updateUser(db, req, res, text){
 export function help(db, req, res){
     const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
     const msg = `borrow <title> \ni'm returning <title> \nwhat books are in <category> \nshow me <title> \nbooks by <author>`;
-    return res.json()
+    fb.pushMessage(id,msg);
+    return res.json({"fulfillmentMessages" : fb.quickReplies(
+        `Or you can click on any of these too!`, 
+        [
+            `what did i borrow`,
+            `show all books`,
+            `show available books`,
+            `unavailable books`
+        ],
+    )});
 }

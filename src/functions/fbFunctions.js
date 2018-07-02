@@ -33,7 +33,7 @@ export function pushNotif(id, payload) {
 		.catch((e) => { console.log(e); });
 }
 
-export function pushQuickReplies(id, text, replies, img) {
+export function pushQuickReplies(id, text, replies) {
 	pushNotif(id, {
 		messaging_type: 'UPDATE',
 		recipient: {
@@ -44,7 +44,6 @@ export function pushQuickReplies(id, text, replies, img) {
 			quick_replies: replies.map(reply => {
 				return {
 					content_type: 'text',
-					image_url:img,
 					title: reply,
 					payload: reply
 				}
@@ -67,33 +66,34 @@ export function pushMessage(id, text) {
 }
 
 export function cardQuickMessages(title, img, subtitle, url, quickReply){
-	return {'fulfillmentMessages': [{
+	return {
         'payload': {
             "facebook": {
                 "attachment": {
                     "type": "template",
                     "payload": {
                         "template_type": "generic",
-                        "elements": [           {
-                            "title": title,
-                            "image_url": img,
-                            "subtitle": subtitle,
-                            "default_action": {
-                              "type": "web_url",
-                              "url": url,
-                              "webview_height_ratio": "tall",
+                        "elements": [
+							{
+                            title: title,
+                            image_url: img,
+                            subtitle: subtitle,
+                            default_action: {
+                              type: "web_url",
+                              url: url,
+                              webview_height_ratio: "tall",
                             },
-                            "buttons":[
+                            buttons:[
                               {
-                                "type":"postback",
-                                "title": quickReply,
-                                "payload": quickReply
+                                type:"postback",
+                                title: quickReply,
+                                payload: quickReply
                               }              
-                            ]}]
+							]}
+						]
                     }
                 }
             }
         }
-        }]
-    }
+	}
 }
