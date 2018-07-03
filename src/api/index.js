@@ -20,8 +20,8 @@ export default ({ config, db }) => {
 		console.log(action)
 		switch(action){ //switch case for actions chosen by the user
 			case 'inputWelcome':
+				return library.broadcast(db, req, res)
 				output["fulfillmentText"] = "Welcome to book rental! What would you like me to call you?";
-				console.log(req.body);
 				return res.json(output);
 			case 'getName':
 				return user.checkUser(db, req, res);

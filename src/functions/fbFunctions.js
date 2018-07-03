@@ -23,7 +23,7 @@ export function fbCard(title, subtitle, img){
 
 export function pushNotif(id, payload) {
 	const url = 'https://graph.facebook.com/v2.6/me/messages?access_token=';
-	const pageAccessToken = 'EAAHkRuPI8FUBAFyiJy8Mjz2B7LpIHn680ZAUqweJdrsCC8FcsCTy5d6VguZAXpIwnXqBtOZB9LJscvzkLFRH2MauOSCcMUPJQxxgH2fkbCjcNGJFh1qAwXinppfTySc6ttdT0v7ZBKXJ6XZAvSmISrdiZBHRo2mJtbaX6XaVeNhOR5SVZClSY6K'
+	const pageAccessToken = 'EAAHkRuPI8FUBAJcGhYQloKVBiEXdHZB0YhnALKLLsIOKFnlhxkr5lzWlcgBHxUTIbC1gYNF9dITwNuBlFoTcf5lAIkpS9ahxcMZBDgE4L1eAiZCw6bDe2sU4yVptxXliPPR2hYpcqZAKxGYItpQYU8rbIt1kM85l2ShQyyFpw4jigepznWVZC'
 	
 	fetch(url + pageAccessToken, {
 		headers: { 'Content-Type': 'application/json' },

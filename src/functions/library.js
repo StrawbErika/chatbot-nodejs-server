@@ -92,5 +92,20 @@ export function updateReturnBook(db, req, res, title){
 }
 
 export function broadcast(db, req, res){
+	var text = "Hello customers of Book Rental! This is a broadcasted message!"
+	var queryString = `Select uid from user`;
 	
+	db.query(queryString, (err, rows) => {
+		if(err) {
+			console.log(err);
+		}
+		if(!rows.length) {
+			return res.json({ fulfillmentText: `There are no customers ` });
+		}
+		for(var i = 0; i < rows.length; i++) {
+			fb.pushMessage(rows[i].uid, text);
+		}
+
+		return res.json({ fulfillmentText: `Sent!` });
+	});
 }
