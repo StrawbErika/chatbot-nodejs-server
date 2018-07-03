@@ -12,6 +12,7 @@ export function checkUser(db, req, res) {
 				return addUser(db, req, res);
             }else {
 				if(name === rows[0].name){
+					fb.pushCard(id);
 					return res.json({ fulfillmentText: `Welcome back, ${rows[0].name}! What do you want to do?` });
 				}
 				else{
@@ -51,15 +52,17 @@ export function updateUser(db, req, res, text){
 
 export function help(db, req, res){
     const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-    const msg = `borrow <title> \ni'm returning <title> \nwhat books are in <category> \nshow me <title> \nbooks by <author>`;
-    fb.pushMessage(id,msg);
-    return res.json({"fulfillmentMessages" : fb.quickReplies(
-        `Or you can click on any of these too!`, 
-        [
-            `what did i borrow`,
-            `show all books`,
-            `show available books`,
-            `unavailable books`
-        ],
-    )});
+	const msg = `Or you can click on any of these too!`;
+	const qr = [
+		`what did i borrow`,
+		`show all books`,
+		`show available books`,
+		`unavailable books`, 
+		`show all categories`
+		
+	] 
+	setTimeout(() => {
+		fb.pushQuickReplies(id, msg, qr);
+	}, 1000)
+    return res.json({fulfillmentText :`borrow <title> \ni'm returning <title> \nwhat books are in <category> \nshow me <title> \nbooks by <author>`});
 }

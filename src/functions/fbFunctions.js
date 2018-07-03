@@ -52,7 +52,6 @@ export function pushQuickReplies(id, text, replies) {
 	});
 }
 
-
 export function pushMessage(id, text) {
 	pushNotif(id, {
 		messaging_type: 'UPDATE',
