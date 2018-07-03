@@ -30,7 +30,9 @@ export default ({ config, db }) => {
 				
 			case 'getBookAuthor':
 				return search.getBookAuthor(db, req, res);
-
+			case 'authorPages':
+				return search.authorPages(db, req, res);
+				
 			case 'getBookTitle':
 				return search.getBookTitle(db, req, res);
 			case 'titlePages':
