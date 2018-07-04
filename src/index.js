@@ -20,11 +20,12 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json({
-	limit : config.bodyLimit
+	// limit : config.bodyLimit
 }));
 
+app.use(bodyParser.urlencoded())
 // connect to db
-initializeDb( db => {
+initializeDb(db => {
 
 	// internal middleware
 	app.use(middleware({ config, db }));

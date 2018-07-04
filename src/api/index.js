@@ -15,24 +15,23 @@ export default ({ config, db }) => {
 
 	api.post('/library', (req, res) => {
 		const action = req.body.queryResult.action;
-		const output = {"fulfillmentText" : " "};
+		const output = { "fulfillmentText": " " };
 		const parameters = req.body.queryResult.parameters;
 		console.log(action)
-		switch(action){ //switch case for actions chosen by the user
+		switch (action) { //switch case for actions chosen by the user
 			case 'inputWelcome':
-				return library.broadcast(db, req, res)
 				output["fulfillmentText"] = "Welcome to book rental! What would you like me to call you?";
 				return res.json(output);
 			case 'getName':
 				return user.checkUser(db, req, res);
 			case 'help':
 				return user.help(db, req, res);
-				
+
 			case 'getBookAuthor':
 				return search.getBookAuthor(db, req, res);
 			case 'authorPages':
 				return search.authorPages(db, req, res);
-				
+
 			case 'getBookTitle':
 				return search.getBookTitle(db, req, res);
 			case 'titlePages':
@@ -54,7 +53,7 @@ export default ({ config, db }) => {
 				return search.showAllBooks(db, req, res);
 			case 'allPages':
 				return search.allPages(db, req, res);
-				
+
 			case 'showAvailableBooks':
 				return search.showAvailableBooks(db, req, res);
 			case 'availablePages':
@@ -66,6 +65,14 @@ export default ({ config, db }) => {
 				return search.showUnavailableBooks(db, req, res);
 
 		}
+	});
+
+	api.post('/broadcast', (req, res) => {
+		return library.broadcast(db, req, res);
+	});
+
+	api.get('/showUsers', (req, res) => {
+		return library.showAllUsers(db, req, res);
 	});
 
 	api.get('/', (req, res) => {
