@@ -206,7 +206,7 @@ export function getBookAuthor(db, req, res) {
             rows.length
           } books. \n So there are ${Math.ceil(
             rows.length / 10
-          )} pages \n Type: 1 : ${author} to get the first 10 books!`
+          )} pages \n Type: A 1 : ${author} to get the first 10 books!`
         });
       }
       return res.json({
@@ -214,7 +214,7 @@ export function getBookAuthor(db, req, res) {
           fb.quickReplies(
             `There are ${rows.length} books. \n So there are ${Math.ceil(
               rows.length / 10
-            )} pages \n Type: 1 : ${author} to get the first 10 books! Or click one of these!`,
+            )} pages \n Type: A 1 : ${author} to get the first 10 books! Or click one of these!`,
             pages
           )
         ]
@@ -252,13 +252,18 @@ export function authorPages(db, req, res) {
         sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
       );
     }
-    setTimeout(() => {
-      fb.pushQuickReplies(
-        id,
-        msg,
-        getQRPages(category, page, rows.length, "A")
-      );
-    }, 3000);
+    if (Math.ceil(rows.length / 10) > 1) {
+      if (Math.ceil(rows.length / 10) < 5) {
+        qr = qr.slice(0, Math.ceil(rows.length / 10));
+      }
+      setTimeout(() => {
+        fb.pushQuickReplies(
+          id,
+          msg,
+          getQRPages(author, page, rows.length, "A")
+        );
+      }, 3000);
+    }
     return res.json({ fulfillmentMessages: books });
   });
 }
@@ -374,6 +379,7 @@ export function getBookCategory(db, req, res) {
           )} pages \n Type: 1 : ${title} to get the first 10 books!`
         });
       }
+
       return res.json({
         fulfillmentMessages: [
           fb.quickReplies(
@@ -418,13 +424,18 @@ export function categoryPages(db, req, res) {
         sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
       );
     }
-    setTimeout(() => {
-      fb.pushQuickReplies(
-        id,
-        msg,
-        getQRPages(category, page, rows.length, "C")
-      );
-    }, 3000);
+    if (Math.ceil(rows.length / 10) > 1) {
+      if (Math.ceil(rows.length / 10) < 5) {
+        qr = qr.slice(0, Math.ceil(rows.length / 10));
+      }
+      setTimeout(() => {
+        fb.pushQuickReplies(
+          id,
+          msg,
+          getQRPages(category, page, rows.length, "C")
+        );
+      }, 3000);
+    }
     return res.json({ fulfillmentMessages: books });
   });
 }
