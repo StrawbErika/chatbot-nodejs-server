@@ -47,7 +47,7 @@ export function borrowBook(db, req, res) {
     updateBorrowBook(
       db,
       res,
-      rows[0].title.slice(1, -1),
+      rows[0].title,
       id,
       search.sliceTitleAuthorImg(rows[0].title, rows[0].author, rows[0].img)
     );
@@ -102,22 +102,18 @@ export function updateReturnBook(db, req, res, title) {
 }
 
 export function broadcast(db, req, res) {
-  var queryString = `Select uid from user`;
+  var approvedUsers = [];
+  for (var i = 0; i < req.body.users.length; i++) {
+    if (req.body.users[i].checked === true) {
+      var num = parseInt(req.body.users[i].id, 10);
+      approvedUsers.push(num);
+    }
+  }
 
-  db.query(queryString, (err, rows) => {
-    if (err) {
-      console.log(err);
-    }
-    if (!rows.length) {
-      return res.json({ fulfillmentText: `There are no customers ` });
-    }
-    console.log(req.body);
-    for (var i = 0; i < rows.length; i++) {
-      fb.pushMessage(rows[i].uid, req.body.text);
-    }
-
-    return res.json({ fulfillmentText: `Sent!` });
-  });
+  for (var i = 0; i < approvedUsers.length; i++) {
+    fb.pushMessage(approvedUsers[i], req.body.text);
+  }
+  return res.json();
 }
 
 export function showAllUsers(db, req, res) {
