@@ -1,25 +1,25 @@
-import mysql from 'mysql';
+import mysql from "mysql";
 
 export default callback => {
-	var mysql = require('mysql');
-	
-	const db = mysql.createConnection({
-		host: 'localhost',
-		user: 'root',
-		password: 'tomhiddleston',
-		database: 'library'
-	});
+  let mysql = require("mysql");
 
-	db.connect(err => {
-		if (err) {
-			console.log('Error in connecting to database');
-			console.log(err.message);
-		} else {
-			console.log('Success in connecting to database');
-		}
-	});
+  const db = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "tomhiddleston",
+    database: "library"
+  });
 
-	db.query('USE library');
+  db.connect(err => {
+    if (err) {
+      console.log("Error in connecting to database");
+      console.log(err.message);
+    } else {
+      console.log("Success in connecting to database");
+    }
+  });
 
-	callback(db);
-}
+  db.query("USE library");
+
+  callback(db);
+};

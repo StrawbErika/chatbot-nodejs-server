@@ -18,7 +18,7 @@ export function checkUser(db, req, res) {
             }! What do you want to do?`
           });
         } else {
-          var text = `That's not your name, ${
+          lettext = `That's not your name, ${
             rows[0].name
           }! But I'll change it into ${name} for you! What do you want to do?`;
           return updateUser(db, req, res, text);

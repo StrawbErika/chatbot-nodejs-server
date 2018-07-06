@@ -3,7 +3,7 @@ import * as search from "./searchFunctions";
 
 export function borrowBook(db, req, res) {
   const borrowed = req.body.queryResult.parameters.borrowed;
-  var queryString = `SELECT title, author, img, uid FROM book WHERE title like '%${borrowed}%'`;
+  let queryString = `SELECT title, author, img, uid FROM book WHERE title like '%${borrowed}%'`;
   const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
   db.query(queryString, (err, rows) => {
     if (err) {
@@ -20,7 +20,7 @@ export function borrowBook(db, req, res) {
           fulfillmentText: `You already have ${rows[0].title}!`
         });
       } else {
-        var num = parseInt(rows[0].uid, 10);
+        let num = parseInt(rows[0].uid, 10);
         const notification = `Someone wants to borrow, ${
           rows[0].title
         }. \nType I'm returning ${rows[0].title}`;
@@ -32,14 +32,14 @@ export function borrowBook(db, req, res) {
     }
     if (rows.length > 1) {
       if (rows.length > 20) {
-        var len = 20;
-        var msg = `There are more than 20 instances of a book with title ${borrowed}. Here are the first 20 similar entries. \n`;
+        let len = 20;
+        let msg = `There are more than 20 instances of a book with title ${borrowed}. Here are the first 20 similar entries. \n`;
       } else {
         len = rows.length;
-        var msg = `There are more than 1 instances of a book with title ${borrowed}. Here are similar entries. \n`;
+        let msg = `There are more than 1 instances of a book with title ${borrowed}. Here are similar entries. \n`;
       }
-      var books = "";
-      for (var i = 0; i < len; i++) {
+      let books = "";
+      for (let i = 0; i < len; i++) {
         books += "\n" + rows[i].title;
       }
       return res.json({ fulfillmentText: msg + books });
@@ -60,7 +60,7 @@ export function updateBorrowBook(db, res, title, id, card) {
     if (err) {
       console.log(err);
     }
-    var msg = `Here's` + " " + title;
+    let msg = `Here's` + " " + title;
     fb.pushMessage(id, msg);
     return res.json({ fulfillmentMessages: [card] });
   });
@@ -69,7 +69,7 @@ export function updateBorrowBook(db, res, title, id, card) {
 export function returnBook(db, req, res) {
   const returned = req.body.queryResult.parameters.returned;
   const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-  var queryString = `SELECT uid, title FROM book WHERE title like '%${returned}%' AND uid like '%${id}%'`;
+  let queryString = `SELECT uid, title FROM book WHERE title like '%${returned}%' AND uid like '%${id}%'`;
 
   db.query(queryString, (err, rows) => {
     if (err) {
@@ -91,7 +91,7 @@ export function returnBook(db, req, res) {
 }
 
 export function updateReturnBook(db, req, res, title) {
-  var queryString = `UPDATE book SET uid = NULL WHERE title like '%${title}%' ORDER BY title LIMIT 1`;
+  let queryString = `UPDATE book SET uid = NULL WHERE title like '%${title}%' ORDER BY title LIMIT 1`;
 
   db.query(queryString, (err, rows) => {
     if (err) {
@@ -102,22 +102,22 @@ export function updateReturnBook(db, req, res, title) {
 }
 
 export function broadcast(db, req, res) {
-  var approvedUsers = [];
-  for (var i = 0; i < req.body.users.length; i++) {
+  let approvedUsers = [];
+  for (let i = 0; i < req.body.users.length; i++) {
     if (req.body.users[i].checked === true) {
-      var num = parseInt(req.body.users[i].id, 10);
+      let num = parseInt(req.body.users[i].id, 10);
       approvedUsers.push(num);
     }
   }
 
-  for (var i = 0; i < approvedUsers.length; i++) {
+  for (let i = 0; i < approvedUsers.length; i++) {
     fb.pushMessage(approvedUsers[i], req.body.text);
   }
   return res.json();
 }
 
 export function showAllUsers(db, req, res) {
-  var queryString = `Select uid, name from user`;
+  let queryString = `Select uid, name from user`;
 
   db.query(queryString, (err, rows) => {
     if (err) {
@@ -126,9 +126,9 @@ export function showAllUsers(db, req, res) {
     if (!rows.length) {
       return res.json({ fulfillmentText: `There are no customers ` });
     }
-    var userList = [];
-    for (var i = 0; i < rows.length; i++) {
-      var user = {};
+    let userList = [];
+    for (let i = 0; i < rows.length; i++) {
+      let user = {};
       user["name"] = rows[i].name;
       user["id"] = rows[i].uid;
       userList.push(user);

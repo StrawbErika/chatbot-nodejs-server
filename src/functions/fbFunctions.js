@@ -55,8 +55,8 @@ export function pushQuickReplies(id, text, replies) {
 }
 
 // export function pushMessage(id, message) {
-//   var FBMessenger = require("fb-messenger");
-//   var messenger = new FBMessenger();
+//   letFBMessenger = require("fb-messenger");
+//   letmessenger = new FBMessenger();
 //   ("EAAHkRuPI8FUBAFTfjenED8ibP5YU490mu5jbqH04p9nEmlWZBLXf1hUI939eWCvSzuoRVTY7wXWa4jPKeJXwbqbeyhjZBLmobOdcQn1IER6gnRjFeE3ZCNbcZAgrfX59bBZCDXBTN6cu0wEDe6d62ZA4DtOxebRk8OcXJPFHhJFSZA95aaQ2XQP");
 //   messenger.sendTextMessage(id, message, function(err, body) {
 //     if (err) return console.error(err);

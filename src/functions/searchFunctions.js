@@ -1,31 +1,39 @@
 import * as fb from "./fbFunctions";
 
+/**
+ * showAll, allPages [*]
+ * getTitle, titlePages [*]
+ * getCategory, categoryPages [*]
+ * getAuthor, authorPages [*]
+ * showAvailable, availablePages [*]
+ */
+
+//21
 export function showBorrowedBooks(db, req, res) {
   const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-  var queryString = `SELECT title, author, img FROM book WHERE uid = '${id}'`;
+  let queryString = `SELECT title, author, img FROM book WHERE uid = '${id}'`;
 
   db.query(queryString, (err, rows) => {
     if (err) {
       console.log(err);
     }
-
     if (!rows.length) {
       return res.json({ fulfillmentText: `You didn't borrow anything!️` });
     } else {
-      var books = [];
-      for (var i = 0; i < rows.length; i++) {
-        const title = rows[i].title.slice(1, -1);
-        const author = rows[i].author.slice(1, -1);
-        const img = rows[i].img.slice(1, -1);
-        const card = fb.fbCard(title, author, img);
-        books.push(card);
+      let borrowedBooks = [];
+      // list of cards with book img, author, title
+      for (let i = 0; i < rows.length; i++) {
+        borrowedBooks.push(
+          sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
+        );
       }
       fb.pushMessage(id, `Here are your borrowed books!`);
-      return res.json({ fulfillmentMessages: books });
+      return res.json({ fulfillmentMessages: borrowedBooks });
     }
   });
 }
 
+//27
 export function showAllBooks(db, req, res) {
   const queryString = "SELECT title, author, category FROM book";
 
@@ -38,29 +46,64 @@ export function showAllBooks(db, req, res) {
     if (!rows.length) {
       return res.json({ fulfillmentText: "There are no books in the db!" });
     }
-    var pages = [];
-    if (rows.length / 10 > 10) {
-      var limit = 10;
-    } else {
-      var limit = Math.ceil(rows.length / 10);
+    let allPages = [];
+    let limit = getNumOfPages(rows.length);
+
+    //list of quick replies
+    for (let i = 0; i < limit; i++) {
+      let pageNum = `${i + 1} : All `;
+      allPages.push(pageNum);
     }
-    for (var i = 0; i < limit; i++) {
-      var pageNum = `${i + 1} : All `;
-      pages.push(pageNum);
-    }
+
     return res.json({
       fulfillmentMessages: [
         fb.quickReplies(
           `There are ${rows.length} books. \n So there are ${Math.ceil(
             rows.length / 10
           )} pages \n Type: 1 : All to get the first 10 books! Or click one of these!`,
-          pages
+          allPages
         )
       ]
     });
   });
 }
 
+//36
+export function allPages(db, req, res) {
+  const queryString =
+    "SELECT title, author, category, img FROM book ORDER BY title ASC";
+  let page = req.body.queryResult.parameters.page;
+  const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
+  db.query(queryString, (err, rows) => {
+    if (err) {
+      console.log(err);
+      return res.json({ fulfillmentText: `Error!` });
+    }
+    if (!rows.length) {
+      return res.json({ fulfillmentText: "There are no books in the db!" });
+    }
+    const startingPage = (page - 1) * 10;
+    let pageNum = getLastPage(page, rows.length);
+    let msg = `Here are the books from ${startingPage} to ${pageNum}:`;
+    let allBooks = [];
+    // list of cards with book img, author, title
+    for (let i = startingPage; i < pageNum; i++) {
+      allBooks.push(
+        sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
+      );
+    }
+    setTimeout(() => {
+      fb.pushQuickReplies(
+        id,
+        msg,
+        getQuickReplyPages("All", page, rows.length, "")
+      );
+    }, 3000);
+    return res.json({ fulfillmentMessages: allBooks });
+  });
+}
+
+//20
 export function showAllCategories(db, req, res) {
   const queryString = "SELECT DISTINCT category FROM book";
 
@@ -73,8 +116,8 @@ export function showAllCategories(db, req, res) {
     if (!rows.length) {
       return res.json({ fulfillmentText: "There are no books in the db!" });
     } else {
-      var categories = "Here are the categories: \n";
-      for (var i = 0; i < rows.length; i++) {
+      let categories = "Here are the categories: \n";
+      for (let i = 0; i < rows.length; i++) {
         categories += rows[i].category;
       }
       return res.json({ fulfillmentText: categories });
@@ -82,6 +125,7 @@ export function showAllCategories(db, req, res) {
   });
 }
 
+//25
 export function showUnavailableBooks(db, req, res) {
   const queryString =
     "SELECT title, author, category FROM book where uid is not null";
@@ -91,13 +135,12 @@ export function showUnavailableBooks(db, req, res) {
       console.log(err);
       return res.json({ fulfillmentText: `Error!` });
     }
-
     if (!rows.length) {
       return res.json({ fulfillmentText: "All are available!" });
     } else {
-      var books = "Here are the unavailable books:";
-      for (var i = 0; i < rows.length; i++) {
-        books +=
+      let unavailableBooks = "Here are the unavailable books:";
+      for (let i = 0; i < rows.length; i++) {
+        unavailableBooks +=
           "\n\n" +
           rows[i].title +
           "\nAuthor: " +
@@ -105,11 +148,12 @@ export function showUnavailableBooks(db, req, res) {
           "\nCategory: " +
           rows[i].category;
       }
-      return res.json({ fulfillmentText: books });
+      return res.json({ fulfillmentText: unavailableBooks });
     }
   });
 }
 
+//26
 export function showAvailableBooks(db, req, res) {
   const queryString =
     "SELECT title, author, category FROM book where uid is null";
@@ -119,16 +163,12 @@ export function showAvailableBooks(db, req, res) {
       console.log(err);
       return res.json({ fulfillmentText: `Error!` });
     }
-
-    var pages = [];
-    if (rows.length / 10 > 10) {
-      var limit = 10;
-    } else {
-      var limit = Math.ceil(rows.length / 10);
-    }
-    for (var i = 0; i < limit; i++) {
-      var pageNum = `${i + 1} : Available `;
-      pages.push(pageNum);
+    let availablePages = [];
+    let limit = getNumOfPages(rows.length);
+    // list of quick replies
+    for (let i = 0; i < limit; i++) {
+      let pageNum = `${i + 1} : Available `;
+      availablePages.push(pageNum);
     }
     return res.json({
       fulfillmentMessages: [
@@ -136,17 +176,18 @@ export function showAvailableBooks(db, req, res) {
           `There are ${rows.length} books. \nThere are ${Math.ceil(
             rows.length / 10
           )} pages  \n Type 1 : Available to get the first 10 books! Or click one of these!`,
-          pages
+          availablePages
         )
       ]
     });
   });
 }
 
+//34
 export function availablePages(db, req, res) {
   const queryString =
     "SELECT title, author, img FROM book where uid is null ORDER by title ASC";
-  var page = req.body.queryResult.parameters.page;
+  let page = req.body.queryResult.parameters.page;
   const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
 
   db.query(queryString, (err, rows) => {
@@ -158,25 +199,28 @@ export function availablePages(db, req, res) {
       return res.json({ fulfillmentText: "There are no books in the db!" });
     }
     const startingPage = (page - 1) * 10;
-    var pageNum = getLastPage(page, rows.length);
-    var msg = `Here are the available books from ${startingPage} to ${pageNum}:`;
-    var books = [];
-    for (var i = startingPage; i < pageNum; i++) {
-      books.push(
+    let lastPage = getLastPage(page, rows.length);
+    let msg = `Here are the available books from ${startingPage} to ${lastPage}:`;
+    let availableBooks = [];
+    // list of cards with book img, author, title
+    for (let i = startingPage; i < lastPage; i++) {
+      availableBooks.push(
         sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
       );
     }
+    // makes sure cards show up before quick reply
     setTimeout(() => {
       fb.pushQuickReplies(
         id,
         msg,
-        getQRPages("Available", page, rows.length, "")
+        getQuickReplyPages("Available", page, rows.length, "")
       );
     }, 3000);
-    return res.json({ fulfillmentMessages: books });
+    return res.json({ fulfillmentMessages: availableBooks });
   });
 }
 
+//30
 export function getBookAuthor(db, req, res) {
   const author = req.body.queryResult.parameters.author;
   const queryString =
@@ -186,28 +230,15 @@ export function getBookAuthor(db, req, res) {
       console.log(err);
       return res.json({ fulfillmentText: `Error!` });
     }
-
     if (!rows.length) {
       return res.json({ fulfillmentText: `${author} has no books!` });
     } else {
-      var pages = [];
-      if (rows.length / 10 > 10) {
-        var limit = 10;
-      } else {
-        var limit = Math.ceil(rows.length / 10);
-      }
-      for (var i = 0; i < limit; i++) {
-        var pageNum = `A ${i + 1} : ${author} `;
-        pages.push(pageNum);
-      }
-      if (pageNum.length > 20) {
-        return res.json({
-          fulfillmentText: `There are ${
-            rows.length
-          } books. \n So there are ${Math.ceil(
-            rows.length / 10
-          )} pages \n Type: A 1 : ${author} to get the first 10 books!`
-        });
+      let authorPages = [];
+      let limit = getNumOfPages(rows.length);
+      //list of quick replies
+      for (let i = 0; i < limit; i++) {
+        let pageNum = `A ${i + 1} : ${author} `;
+        authorPages.push(pageNum);
       }
       return res.json({
         fulfillmentMessages: [
@@ -215,7 +246,7 @@ export function getBookAuthor(db, req, res) {
             `There are ${rows.length} books. \n So there are ${Math.ceil(
               rows.length / 10
             )} pages \n Type: A 1 : ${author} to get the first 10 books! Or click one of these!`,
-            pages
+            authorPages
           )
         ]
       });
@@ -223,9 +254,10 @@ export function getBookAuthor(db, req, res) {
   });
 }
 
+//35
 export function authorPages(db, req, res) {
   const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-  var page = req.body.queryResult.parameters.page;
+  let page = req.body.queryResult.parameters.page;
   const author = req.body.queryResult.parameters.author;
   const queryString = "SELECT title, author, img FROM book WHERE author like?";
   db.query(queryString, "%" + author + "%", (err, rows) => {
@@ -237,40 +269,33 @@ export function authorPages(db, req, res) {
       return res.json({ fulfillmentText: "There are no books in the db!" });
     }
     const startingPage = (page - 1) * 10;
-    var pageNum = getLastPage(page, rows.length);
-    var msg = `Here are books by ${author}: from ${startingPage} to ${pageNum}:`;
-    var qr = [
-      `A ${page + 1} : ${author} `,
-      `A ${page + 2} : ${author} `,
-      `A ${page + 3} : ${author} `,
-      `A ${page + 4} : ${author} `,
-      `A ${page + 5} : ${author} `
-    ];
-    var books = [];
-    for (var i = startingPage; i < pageNum; i++) {
-      books.push(
+    let lastPage = getLastPage(page, rows.length);
+    let msg = `Here are books by ${author}: from ${startingPage} to ${lastPage}:`;
+    let quickReplies = [];
+    // list of cards with book img, author, title
+    for (let i = 1; i < 6; i++) {
+      quickReplies.push(`A ${page + i} : ${author}`);
+    }
+    let authorBooks = [];
+    for (let i = startingPage; i < lastPage; i++) {
+      authorBooks.push(
         sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
       );
     }
-    if (Math.ceil(rows.length / 10) > 1) {
-      if (Math.ceil(rows.length / 10) < 5) {
-        qr = qr.slice(0, Math.ceil(rows.length / 10));
-      }
-      setTimeout(() => {
-        fb.pushQuickReplies(
-          id,
-          msg,
-          getQRPages(author, page, rows.length, "A")
-        );
-      }, 3000);
-    }
-    return res.json({ fulfillmentMessages: books });
+    let maxPages = Math.ceil(rows.length / 10);
+    checkMaxPages(
+      maxPages,
+      id,
+      msg,
+      getQuickReplyPages(author, page, rows.length, "A")
+    );
+    return res.json({ fulfillmentMessages: authorBooks });
   });
 }
 
+//37
 export function getBookTitle(db, req, res) {
   const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-
   const title = req.body.queryResult.parameters.title;
   const queryString =
     "SELECT title, author, category, img FROM book WHERE title like ?";
@@ -279,72 +304,76 @@ export function getBookTitle(db, req, res) {
       console.log(err);
       return res.json({ fulfillmentText: `Error in finding book ${title}!` });
     }
-
     if (!rows.length) {
       return res.json({ fulfillmentText: `We don't have anything ${title}!` });
     } else {
+      //checks if instance is only 1 to enable quick reply of borrowing of book
       if (rows.length == 1) {
         sliceTitleAuthorImg(rows[0].title, rows[0].author, rows[0].img);
-
-        var borrow = `Borrow ${title}`;
-        if (borrow.length > 20) {
-          return res.json({
-            fulfillmentText: `Would you like to borrow that book? Type: ${
-              rows[0].title
-            }`
-          });
-        } else {
-          setTimeout(() => {
-            fb.pushQuickReplies(
-              id,
-              `Would you like to borrow that book? Click this!`,
-              [borrow]
-            );
-          }, 3000);
-
-          return res.json({
-            fulfillmentMessages: [
-              sliceTitleAuthorImg(rows[0].title, rows[0].author, rows[0].img)
-            ]
-          });
-        }
+        let borrow = `Borrow ${title}`;
+        return allowQuickReplyBorrow(
+          borrow,
+          rows[0].title,
+          rows[0].author,
+          rows[0].img
+        );
       } else {
-        var pages = [];
-        if (rows.length / 10 > 10) {
-          var limit = 10;
-        } else {
-          var limit = Math.ceil(rows.length / 10);
+        let titlePages = [];
+        let limit = getNumOfPages(rows.length);
+        // list of quick replies
+        for (let i = 0; i < limit; i++) {
+          let pageNum = `T ${i + 1} : ${title} `;
+          titlePages.push(pageNum);
         }
-        for (var i = 0; i < limit; i++) {
-          var pageNum = `T ${i + 1} : ${title} `;
-          pages.push(pageNum);
-        }
-        if (pageNum.length > 20) {
-          return res.json({
-            fulfillmentText: `There are ${
-              rows.length
-            } books. \n So there are ${Math.ceil(
-              rows.length / 10
-            )} pages \n Type: T 1 : ${title} to get the first 10 books!`
-          });
-        }
+        let msg = `There are ${
+          rows.length
+        } books with the title ${title}. \n So there are ${Math.ceil(
+          rows.length / 10
+        )} pages \n Type: T 1 : ${title} to get the first 10 books! Or click one of these!`;
         return res.json({
-          fulfillmentMessages: [
-            fb.quickReplies(
-              `There are ${
-                rows.length
-              } books with the title ${title}. \n So there are ${Math.ceil(
-                rows.length / 10
-              )} pages \n Type: T 1 : ${title} to get the first 10 books! Or click one of these!`,
-              pages
-            )
-          ]
+          fulfillmentMessages: [fb.quickReplies(msg, titlePages)]
         });
       }
     }
   });
 }
 
+//30
+export function titlePages(db, req, res) {
+  const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
+  let page = req.body.queryResult.parameters.page;
+  const ptitle = req.body.queryResult.parameters.title;
+  const queryString = "SELECT title, author, img FROM book WHERE title like ?";
+  db.query(queryString, "%" + ptitle + "%", (err, rows) => {
+    if (err) {
+      console.log(err);
+      return res.json({ fulfillmentText: `Error!` });
+    }
+    if (!rows.length) {
+      return res.json({ fulfillmentText: "There are no books in the db!" });
+    }
+    const startingPage = (page - 1) * 10;
+    let pageNum = getLastPage(page, rows.length);
+    let msg = `Here are books with title: ${ptitle} from ${startingPage} to ${pageNum}:`;
+    let titleBooks = [];
+    // list of cards with book img, author, title
+    for (let i = startingPage; i < pageNum; i++) {
+      titleBooks.push(
+        sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
+      );
+    }
+    //check max pages, makes sure that returns appropriate amount of quick replies
+    checkMaxPages(
+      rows.length / 10,
+      id,
+      msg,
+      getQuickReplyPages(ptitle, page, rows.length, "T")
+    );
+    return res.json({ fulfillmentMessages: titleBooks });
+  });
+}
+
+//32
 export function getBookCategory(db, req, res) {
   const category = req.body.queryResult.parameters.category;
   const queryString =
@@ -354,32 +383,18 @@ export function getBookCategory(db, req, res) {
       console.log(err);
       return res.json({ fulfillmentText: `Error!` });
     }
-
     if (!rows.length) {
       return res.json({
         fulfillmentText: `We don't have anything in ${category}! :'(`
       });
     } else {
-      var pages = [];
-      if (rows.length / 10 > 10) {
-        var limit = 10;
-      } else {
-        var limit = Math.ceil(rows.length / 10);
-      }
-      for (var i = 0; i < limit; i++) {
-        var pageNum = `C ${i + 1} : ${category} `;
+      let pages = [];
+      let limit = getNumOfPages(rows.length);
+      // list of quick replies
+      for (let i = 0; i < limit; i++) {
+        let pageNum = `C ${i + 1} : ${category} `;
         pages.push(pageNum);
       }
-      if (pageNum.length > 20) {
-        return res.json({
-          fulfillmentText: `There are ${
-            rows.length
-          } books. \n So there are ${Math.ceil(
-            rows.length / 10
-          )} pages \n Type: 1 : ${title} to get the first 10 books!`
-        });
-      }
-
       return res.json({
         fulfillmentMessages: [
           fb.quickReplies(
@@ -394,9 +409,10 @@ export function getBookCategory(db, req, res) {
   });
 }
 
+//37
 export function categoryPages(db, req, res) {
   const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-  var page = req.body.queryResult.parameters.page;
+  let page = req.body.queryResult.parameters.page;
   const category = req.body.queryResult.parameters.category;
   const queryString =
     "SELECT title, author, category, img FROM book WHERE category like?";
@@ -409,160 +425,102 @@ export function categoryPages(db, req, res) {
       return res.json({ fulfillmentText: "There are no books in the db!" });
     }
     const startingPage = (page - 1) * 10;
-    var pageNum = getLastPage(page, rows.length);
-    var msg = `Here are ${category} books: from ${startingPage} to ${pageNum}:`;
-    var qr = [
-      `C ${page + 1} : ${category} `,
-      `C ${page + 2} : ${category} `,
-      `C ${page + 3} : ${category} `,
-      `C ${page + 4} : ${category} `,
-      `C ${page + 5} : ${category} `
-    ];
-    var books = [];
-    for (var i = startingPage; i < pageNum; i++) {
-      books.push(
+    let pageNum = getLastPage(page, rows.length);
+    let msg = `Here are ${category} books: from ${startingPage} to ${pageNum}:`;
+    let categoryBooks = [];
+    // list of cards with book img, author, title
+    for (let i = startingPage; i < pageNum; i++) {
+      categoryBooks.push(
         sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
       );
     }
-    if (Math.ceil(rows.length / 10) > 1) {
-      if (Math.ceil(rows.length / 10) < 5) {
-        qr = qr.slice(0, Math.ceil(rows.length / 10));
-      }
-      setTimeout(() => {
-        fb.pushQuickReplies(
-          id,
-          msg,
-          getQRPages(category, page, rows.length, "C")
-        );
-      }, 3000);
-    }
-    return res.json({ fulfillmentMessages: books });
+    //check max pages, makes sure that returns appropriate amount of quick replies
+    checkMaxPages(
+      rows.length / 10,
+      id,
+      msg,
+      getQuickReplyPages(category, page, rows.length, "C")
+    );
+    return res.json({ fulfillmentMessages: categoryBooks });
   });
 }
 
-export function titlePages(db, req, res) {
-  const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-  var page = req.body.queryResult.parameters.page;
-  const ptitle = req.body.queryResult.parameters.title;
-  const queryString = "SELECT title, author, img FROM book WHERE title like ?";
-  db.query(queryString, "%" + ptitle + "%", (err, rows) => {
-    if (err) {
-      console.log(err);
-      return res.json({ fulfillmentText: `Error!` });
-    }
-    if (!rows.length) {
-      return res.json({ fulfillmentText: "There are no books in the db!" });
-    }
-    const startingPage = (page - 1) * 10;
-    var pageNum = getLastPage(page, rows.length);
-    var msg = `Here are books with title: ${ptitle} from ${startingPage} to ${pageNum}:`;
-    var qr = [
-      `T ${page + 1} : ${ptitle} `,
-      `T ${page + 2} : ${ptitle} `,
-      `T ${page + 3} : ${ptitle} `,
-      `T ${page + 4} : ${ptitle} `,
-      `T ${page + 5} : ${ptitle} `
-    ];
-    var books = [];
-    for (var i = startingPage; i < pageNum; i++) {
-      books.push(
-        sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
-      );
-    }
-    if (Math.ceil(rows.length / 10) > 1) {
-      if (Math.ceil(rows.length / 10) < 5) {
-        qr = qr.slice(0, Math.ceil(rows.length / 10));
-      }
-      setTimeout(() => {
-        fb.pushQuickReplies(
-          id,
-          msg,
-          getQRPages(ptitle, page, rows.length, "T")
-        );
-      }, 3000);
-    }
-
-    return res.json({ fulfillmentMessages: books });
-  });
-}
-
-export function allPages(db, req, res) {
-  const queryString =
-    "SELECT title, author, category, img FROM book ORDER BY title ASC";
-  var page = req.body.queryResult.parameters.page;
-  const id = req.body.originalDetectIntentRequest.payload.data.sender.id;
-  db.query(queryString, (err, rows) => {
-    if (err) {
-      console.log(err);
-      return res.json({ fulfillmentText: `Error!` });
-    }
-    if (!rows.length) {
-      return res.json({ fulfillmentText: "There are no books in the db!" });
-    }
-    const startingPage = (page - 1) * 10;
-    var pageNum = getLastPage(page, rows.length);
-    var msg = `Here are the books from ${startingPage} to ${pageNum}:`;
-    var qr = [
-      `${page + 1} : All `,
-      `${page + 2} : All `,
-      `${page + 3} : All `,
-      `${page + 4} : All `,
-      `${page + 5} : All `
-    ];
-    var books = [];
-    for (var i = startingPage; i < pageNum; i++) {
-      books.push(
-        sliceTitleAuthorImg(rows[i].title, rows[i].author, rows[i].img)
-      );
-    }
-    setTimeout(() => {
-      fb.pushQuickReplies(id, msg, getQRPages("All", page, rows.length, ""));
-    }, 3000);
-    return res.json({ fulfillmentMessages: books });
-  });
-}
-
+// returns appropriate fbCard with quotations sliced
 export function sliceTitleAuthorImg(title, author, img) {
   return fb.fbCard(title.slice(1, -1), author.slice(1, -1), img.slice(1, -1));
 }
 
+//makes sure that the last page has the exact cards
 export function getLastPage(page, length) {
+  let pageNum = 0;
   if (page === Math.floor(length / 10) + 1) {
     const excess = length % 10;
-    var pageNum = (page - 1) * 10 + excess;
+    pageNum = (page - 1) * 10 + excess;
   } else {
     pageNum = page * 10;
   }
   return pageNum;
 }
 
-export function getQRPages(pageName, page, length, keyword) {
-  var lastPage = Math.ceil(length / 10);
+export function getQuickReplyPages(pageName, page, length, keyword) {
+  let lastPage = Math.ceil(length / 10);
+  let qr = [];
   if (page === lastPage) {
-    var qr = [
-      `${keyword} ${page - 1} : ${pageName} `,
-      `${keyword} ${page - 2} : ${pageName} `,
-      `${keyword} ${page - 3} : ${pageName} `,
-      `${keyword} ${page - 4} : ${pageName} `,
-      `${keyword} ${page - 5} : ${pageName} `
-    ];
+    // if we are on page that's the lastPage, quick replies shows pages back
+    for (let i = 1; i < 6; i++) {
+      qr.push(`${keyword} ${page - i} : ${pageName} `);
+    }
   } else if (page > lastPage - 5) {
-    var qr = [
-      `${keyword} ${page + 1} : ${pageName} `,
-      `${keyword} ${page + 2} : ${pageName} `,
-      `${keyword} ${page + 3} : ${pageName} `,
-      `${keyword} ${page + 4} : ${pageName} `,
-      `${keyword} ${page + 5} : ${pageName} `
-    ];
-    var qr = qr.slice(0, lastPage - page);
+    // ex if lastPage is 25 and im on page 23, it shouldn't show 23+5 pages, should only show 24 25 so it will only show 2 more quick reply pages
+    for (let i = 1; i < lastPage - (page - 1); i++) {
+      qr.push(`${keyword} ${page + i} : ${pageName} `);
+    }
   } else {
-    var qr = [
-      `${keyword} ${page + 1} : ${pageName} `,
-      `${keyword} ${page + 2} : ${pageName} `,
-      `${keyword} ${page + 3} : ${pageName} `,
-      `${keyword} ${page + 4} : ${pageName} `,
-      `${keyword} ${page + 5} : ${pageName} `
-    ];
+    for (let i = 1; i < 6; i++) {
+      qr.push(`${keyword} ${page + i} : ${pageName} `);
+    }
   }
   return qr;
+}
+
+// makes sure if more than 10 pages, limit will be 10
+export function getNumOfPages(length) {
+  let limit = 0;
+  if (length / 10 > 10) {
+    limit = 10;
+  } else {
+    limit = Math.ceil(length / 10);
+  }
+  return limit;
+}
+
+export function checkMaxPages(maxPages, id, msg, quickReplyPages) {
+  if (Math.ceil(maxPages) > 1) {
+    if (Math.ceil(maxPages) < 5) {
+      quickReplies = quickReplies.slice(0, Math.ceil(maxPages));
+    }
+    setTimeout(() => {
+      fb.pushQuickReplies(id, msg, quickReplyPages);
+    }, 3000);
+  }
+}
+
+//checks if possible to quick reply borrow
+export function allowQuickReplyBorrow(msg, title, author, img) {
+  if (msg.length > 20) {
+    return res.json({
+      fulfillmentText: `Would you like to borrow that book? Type: ${title}`
+    });
+  } else {
+    setTimeout(() => {
+      fb.pushQuickReplies(
+        id,
+        `Would you like to borrow that book? Click this!`,
+        [msg]
+      );
+    }, 3000);
+    return res.json({
+      fulfillmentMessages: [sliceTitleAuthorImg(title, author, img)]
+    });
+  }
 }
